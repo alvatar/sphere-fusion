@@ -1,0 +1,9 @@
+android/bin
+android/build
+android/dist
+android/gen
+android/libs
+android/obj
+android/jni/build
+android/jni/gambit
+android/manifest.mf

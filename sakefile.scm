@@ -116,7 +116,7 @@ LOCAL_SRC_FILES :="
          (string-append " build/" link-module))
 "
 LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit
-LOCAL_LDLIBS := -ldl -fno-short-enums -lc -L./gambit -lgambc
+LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -L./gambit -lgambc
 
 include $(BUILD_SHARED_LIBRARY)
 ")

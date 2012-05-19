@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-     package="org.playground.gambit">
-    <application>
-         <activity android:name=".MainActivity" android:label="Scheme Playground">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
-    </application>
+  package="org.playground.gambit"
+  android:installLocation="preferExternal">
+  <uses-sdk android:minSdkVersion="8"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNALSTORAGE" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <application
+    android:debuggable="true" >
+    <activity
+      android:name=".PlaygroundActivity"
+      android:label="Scheme Playground">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+  </application>
 </manifest>

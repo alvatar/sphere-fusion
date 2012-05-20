@@ -54,7 +54,7 @@ ___END_C_LINKAGE
 
 ___setup_params_struct setup_params;
 
-void Java_org_playground_gambit_PlaygroundActivity_initGambit(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_GambitThread_initGambit(JNIEnv *env, jobject obj)
 {
 	// Taken from gambit, lib/main.c. 
 	int debug_settings = ___DEBUG_SETTINGS_INITIAL;
@@ -127,34 +127,34 @@ void Java_org_playground_gambit_PlaygroundActivity_nativeDestroy(JNIEnv *env, jo
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeDestroy()");
 }
 
-void Java_org_playground_gambit_PlaygroundSurface_nativeSurfaceCreated(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PlaygroundActivity_nativeSurfaceCreated(JNIEnv *env, jobject obj)
 {
     gambit_surface_created();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeSurfaceCreated()");
 }
-void Java_org_playground_gambit_PlaygroundSurface_nativeSurfaceDestroy(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PlaygroundActivity_nativeSurfaceDestroy(JNIEnv *env, jobject obj)
 {
     gambit_surface_destroy();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeSurfaceDestroy()");
 }
-void Java_org_playground_gambit_PlaygroundSurface_nativeSurfaceChanged(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PlaygroundActivity_nativeSurfaceChanged(JNIEnv *env, jobject obj)
 {
     gambit_surface_changed();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeSurfaceChanged()");
 }
-void Java_org_playground_gambit_PlaygroundSurface_nativeOnTouchDown(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PlaygroundActivity_nativeOnTouchDown(JNIEnv *env, jobject obj)
 {
     gambit_on_touch_down();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeOnTouchDown()");
 }
 
-void Java_org_playground_gambit_PlaygroundSurface_nativeOnTouchUp(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PlaygroundActivity_nativeOnTouchUp(JNIEnv *env, jobject obj)
 {
     gambit_on_touch_up();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeOnTouchUp()");
 }
 
-void Java_org_playground_gambit_PlaygroundSurface_nativeOnTouchMove(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PlaygroundActivity_nativeOnTouchMove(JNIEnv *env, jobject obj)
 {
     gambit_on_touch_move();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeOnTouchMove()");

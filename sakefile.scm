@@ -132,6 +132,7 @@ include $(BUILD_SHARED_LIBRARY)
          (lambda (m)
            (compile-file-to-c
             (string-append "android/jni/" m)
+            options: '(report)
             output: (string-append ,android-current-build-directory m ".c")))
          ',android-modules)
         (link-incremental ',(append external-modules here-modules)

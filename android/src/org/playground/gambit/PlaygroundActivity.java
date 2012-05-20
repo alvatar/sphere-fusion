@@ -76,12 +76,13 @@ public class PlaygroundActivity extends Activity implements OnTouchListener {
         _surface.onResume();
 
         if (_gambit == null) {
-            Log.v(PlaygroundConfig.AppName, "OH MY GOD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Log.e(PlaygroundConfig.AppName, "This shouldn't happen. A resumed instace had the Gambit thread nullifed");
             _gambit = new GambitThread(this);
             _gambit.start();
         }
         try {
-            _gambit.putMessage("RESUME GAMBIT");
+            //_gambit.putMessage("RESUME GAMBIT");
+            _gambit.receiveMessage("ON RESUME SENT TO GAMBIT");
         } catch (InterruptedException e) {}
     }
 
@@ -140,7 +141,7 @@ public class PlaygroundActivity extends Activity implements OnTouchListener {
             */
         }
     };
-    void sendCommand(Object data) {
+    void receiveMessage(Object data) {
         Message msg = commandHandler.obtainMessage();
         //msg.arg1 = command;
         msg.obj = data;
@@ -219,7 +220,7 @@ public class PlaygroundActivity extends Activity implements OnTouchListener {
 }
 
 class GambitThread extends Thread {
-    PlaygroundActivity _activity;
+    static PlaygroundActivity _activity;
     static final int MAX_MESSAGES = 10;
         // TODO: use a better data structure
     private Vector<String> _messages = new Vector<String>();
@@ -228,25 +229,39 @@ class GambitThread extends Thread {
         _activity = a;
     }
 
+    /*
+    Handler commandHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            Log.v(PlaygroundConfig.AppName, "GAMBIT: message received [" + Thread.currentThread().getId() + "] -- " + (String)msg.obj);
+        }
+    };
+    void receiveMessage(Object data) {
+        Message msg = commandHandler.obtainMessage();
+        msg.obj = data;
+        commandHandler.sendMessage(msg);
+    }
+    */
+
     public void run() {
         // Set up Gambit
+        jniInit();
         initGambit();
         ////////////////////// Here we enter Gambit
         try { 
             while ( true ) { // Instead of a loop, this will be Gambit's execution
                 // This block will be called from within Gambit on demand
                 if(availableMessages() > 0) {
-                    Log.v(PlaygroundConfig.AppName, "Message from Activity received: " + getMessage());
+                    Log.v(PlaygroundConfig.AppName, "GAMBIT: message received [" + Thread.currentThread().getId() + "] -- " + getMessage());
                 }
                 sleep( 500 ); 
-                _activity.sendCommand("COMMAND FROM GAMBIT TO ACTIVITY");
+                _activity.receiveMessage("COMMAND FROM GAMBIT TO ACTIVITY");
             }
         }  
         catch( InterruptedException e ) { }
         //////////////////////
     }
 
-    public synchronized void putMessage(String m) throws InterruptedException {
+    public synchronized void receiveMessage(String m) throws InterruptedException {
         while(_messages.size() == MAX_MESSAGES) {
             wait();
         }
@@ -260,21 +275,25 @@ class GambitThread extends Thread {
     }
 
     protected synchronized String getMessage() throws InterruptedException {
-        /*
-        notify();
-        while(_messages.isEmpty()) {
-            wait();
-        }
-        String m = (String)_messages.firstElement();
-        _messages.removeElement(m);
-        return m;
-        */
+        //notify();
+        //while(_messages.isEmpty()) {
+            //wait();
+        //}
+        //String m = (String)_messages.firstElement();
+        //_messages.removeElement(m);
+        //return m;
         notify();
         String m = (String)_messages.firstElement();
         _messages.removeElement(m);
         return m;
     }
 
+    // Called from C
+    public static void sendMessageToActivity() {
+        _activity.receiveMessage("GAMBIT SAYS HELLO!!!");
+    }
+
     public static native void initGambit();
+    public static native void jniInit();
 }
 

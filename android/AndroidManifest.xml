@@ -6,7 +6,7 @@
   <uses-permission android:name="android.permission.WRITE_EXTERNALSTORAGE" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
   <application
-    android:debuggable="true" >
+    >
     <activity
       android:name=".PlaygroundActivity"
       android:label="Scheme Playground">
@@ -17,3 +17,4 @@
     </activity>
   </application>
 </manifest>
+    <!-- android:debuggable="true" -->

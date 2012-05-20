@@ -46,6 +46,51 @@
 #include <jni.h>
 #include <android/log.h>
 
+/*******************************************************************************
+ Functions called by JNI
+*******************************************************************************/
+
+#define LOG_TAG "Playground"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
+///////////////// TODO: DEFINE IF C++
+#define EXTERN 
+
+
+static JNIEnv* java_env = NULL;
+static JavaVM* java_vm;
+
+EXTERN jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+    JNIEnv *env;
+    java_vm = vm;
+    LOGI("JNI_OnLoad called");
+    if ((*java_vm)->GetEnv(java_vm, (void**)&env, JNI_VERSION_1_4) != JNI_OK) {
+        LOGE("Failed to get the environment using GetEnv()");
+        return -1;
+    }
+    return JNI_VERSION_1_4;
+}
+
+// Gambit thread class
+static jclass gambit_class;
+//  Methods
+static jmethodID send_message_to_activity;
+
+EXTERN void Java_org_playground_gambit_GambitThread_jniInit(JNIEnv* env, jclass cls, jobject obj) {
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "jni_init_bindings()");
+    java_env = env;
+    gambit_class = (jclass)(*env)->NewGlobalRef(env,cls);
+    send_message_to_activity  = (*java_env)->GetStaticMethodID(java_env, gambit_class, "sendMessageToActivity", "()V");
+    if(!send_message_to_activity) {
+        __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "Couldn't locate Java callbacks");
+    }
+}
+
+/*******************************************************************************
+ Gambit
+*******************************************************************************/
+
 #define LINKER ____20_playground_2d_prototype__
 
 ___BEGIN_C_LINKAGE
@@ -85,6 +130,11 @@ void Java_org_playground_gambit_GambitThread_initGambit(JNIEnv *env, jobject obj
     setup_params.debug_settings = debug_settings;
 	
 	___setup(&setup_params);
+
+
+    //(*java_env)->CallStaticVoidMethod(java_env, gambit_class, send_message_to_activity); 
+
+    // FIXME: NEED TO DO CLEANUP AFTER!
 }
 
 int fib(int x);
@@ -159,6 +209,7 @@ void Java_org_playground_gambit_PlaygroundActivity_nativeOnTouchMove(JNIEnv *env
     gambit_on_touch_move();
     __android_log_print(ANDROID_LOG_INFO, "Playground", "nativeOnTouchMove()");
 }
+
 
 end-c-declare
 )

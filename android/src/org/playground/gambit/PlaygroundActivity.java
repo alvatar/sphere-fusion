@@ -23,15 +23,13 @@ import android.graphics.*;
 import android.view.Window;
 import android.view.WindowManager;
 
+/**
+    PlaygroundActivity. This is the Activity that handles the GLES drawing thread. 
+*/
 public class PlaygroundActivity extends Activity {
 
-    // Components
-    /*
-    private static GLSurfaceView _surface;
-    */
     private static PlaygroundActivity _singleton;
     private static PGSurface _surface;
-
     private static PGThread _playThread;
 
     static {
@@ -103,33 +101,6 @@ public class PlaygroundActivity extends Activity {
         return _surface;
     }
 
-    /*
-    @Override
-    public boolean onTouch(View v, MotionEvent e) {
-        Log.v(PGConfig.AppName, "Surface OnTouch();");
-        int raw_action = e.getAction();
-        int action = raw_action & MotionEvent.ACTION_MASK;
-        // Single touch
-        int pointerIndex = (raw_action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
-        int pointerId = e.getPointerId(pointerIndex);
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_POINTER_DOWN:
-                //nativeOnTouchDown();
-                break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_POINTER_UP:
-            case MotionEvent.ACTION_CANCEL:
-                //nativeOnTouchUp();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                //nativeOnTouchMove();
-                break;
-        }
-        return true;
-    }
-    */
-
     //********************
     // MESSAGE HANDLING
     //********************
@@ -151,6 +122,9 @@ public class PlaygroundActivity extends Activity {
     }
 }
 
+/**
+    PGSurface. This is the surface used for grabbing events.
+*/
 class PGSurface extends SurfaceView implements SurfaceHolder.Callback, 
     View.OnTouchListener {
 
@@ -164,7 +138,6 @@ class PGSurface extends SurfaceView implements SurfaceHolder.Callback,
         setOnTouchListener(this);   
     }
 
-    // Called when we have a valid drawing surface
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v(PGConfig.AppName, "surfaceCreated()");
@@ -172,14 +145,12 @@ class PGSurface extends SurfaceView implements SurfaceHolder.Callback,
         PGThread.createEGLSurface();
     }
 
-    // Called when we lose the surface
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.v(PGConfig.AppName, "surfaceDestroyed()");
         //PlaygroundActivity.nativePause();
     }
 
-    // Called when the surface is resized
     @Override
     public void surfaceChanged(SurfaceHolder holder,
                                int format, int width, int height) {
@@ -240,19 +211,43 @@ class PGSurface extends SurfaceView implements SurfaceHolder.Callback,
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         Log.v(PGConfig.AppName, "Surface ON TOUCH!");
+        /*
+        int raw_action = e.getAction();
+        int action = raw_action & MotionEvent.ACTION_MASK;
+        // Single touch
+        int pointerIndex = (raw_action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
+        int pointerId = e.getPointerId(pointerIndex);
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                //nativeOnTouchDown();
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_POINTER_UP:
+            case MotionEvent.ACTION_CANCEL:
+                //nativeOnTouchUp();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                //nativeOnTouchMove();
+                break;
+        }
+        return true;
+        */
         return true;
    } 
-
 }
 
+/**
+    PGConfig. All globals are placed here.
+*/
 class PGConfig {
     static String AppName = "Playground";
 }
 
-
-
-
-
+/**
+    PGThread. Class for building the thread that will be used for native
+    GLES calls and communication callbacks.
+*/
 class PGThread extends Thread {
     private static EGLContext _EGLContext;
     private static EGLSurface _EGLSurface;
@@ -273,7 +268,7 @@ class PGThread extends Thread {
     public void run() {
         // Set up Gambit
         PGThread.jniInit();
-        PGThread.initGambit();
+        PGThread.enterGambit();
         ////////////////////// Here we enter Gambit
         try { 
             while ( true ) { // Instead of a loop, this will be Gambit's execution
@@ -288,6 +283,10 @@ class PGThread extends Thread {
         catch( InterruptedException e ) { }
         //////////////////////
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Messaging
+    ////////////////////////////////////////////////////////////////////////////
 
     public synchronized void receiveMessage(String m) throws InterruptedException {
         while(_messages.size() == MAX_MESSAGES) {
@@ -315,18 +314,14 @@ class PGThread extends Thread {
         return m;
     }
 
-    // Called from C
+    ////////////////////////////////////////////////////////////////////////////
+    // Called from native code 
+    ////////////////////////////////////////////////////////////////////////////
+
     public static void sendStringMessageToActivity() {
         // TODO: Fill with String argument
         _activity.receiveMessage("GAMBIT SAYS HELLO!!!");
     }
-
-
-
-
-
-
-
 
     public static boolean initEGL(int majorVersion, int minorVersion) {
         if (PGThread._EGLDisplay == null) {
@@ -372,7 +367,6 @@ class PGThread extends Thread {
         return true;
     }
 
-    // Called from native code
     public static void flipEGL() {
         try {
             EGL10 egl = (EGL10)EGLContext.getEGL();
@@ -435,7 +429,10 @@ class PGThread extends Thread {
         return false;
     }
 
-    // This is going to be called within the PGThread
-    public static native void initGambit();
+    ////////////////////////////////////////////////////////////////////////////
+    // Native methods
+    ////////////////////////////////////////////////////////////////////////////
+
     public static native void jniInit();
+    public static native void enterGambit();
 }

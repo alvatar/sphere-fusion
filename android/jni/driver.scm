@@ -128,7 +128,7 @@ ___END_C_LINKAGE
 
 ___setup_params_struct setup_params;
 
-void Java_org_playground_gambit_PGThread_initGambit(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PGThread_enterGambit(JNIEnv *env, jobject obj)
 {
 	// Taken from gambit, lib/main.c. 
 	int debug_settings = ___DEBUG_SETTINGS_INITIAL;

@@ -102,9 +102,37 @@ public class PlaygroundActivity extends Activity {
     }
 
     public static boolean initEGL(int majorVersion, int minorVersion) {
-        /*
         if (PlaygroundActivity._EGLDisplay == null) {
             try {
+                EGL10 egl = (EGL10)EGLContext.getEGL();
+                EGLDisplay display = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+                int [] version = new int[2];
+                egl.eglInitialize(display, version);
+                int EGL_OPENGL_ES_BIT = 1;
+                int EGL_OPENGL_ES2_BIT = 4;
+                int renderableType = 0;
+                if (majorVersion == 2) {
+                    renderableType = EGL_OPENGL_ES2_BIT;
+                } else if (majorVersion == 1) {
+                    renderableType = EGL_OPENGL_ES_BIT;
+                }
+                int[] configSpec = {
+                    EGL10.EGL_RENDERABLE_TYPE,
+                    renderableType,
+                    EGL10.EGL_NONE
+                };
+                EGLConfig[] configs = new EGLConfig[1];
+                int [] num_config = new int[1];
+                if (!egl.eglChooseConfig(display, configSpec, configs, 1, num_config) || num_config[0] == 0) {
+                    Log.e("SDL", "No EGL config available");
+                    return false;
+                }
+                EGLConfig config = configs[0];
+                PlaygroundActivity._EGLDisplay = display;
+                PlaygroundActivity._EGLConfig = config;
+                PlaygroundActivity._GLMajorVersion = majorVersion;
+                PlaygroundActivity._GLMinorVersion = minorVersion;
+                PlaygroundActivity.createEGLSurface();
             } catch (Exception e) {
                 Log.v(PlayConfig.AppName, e + "");
                 for (StackTraceElement s : e.getStackTrace()) {
@@ -113,18 +141,73 @@ public class PlaygroundActivity extends Activity {
             }
         }
         else PlaygroundActivity.createEGLSurface();
-        */
         
         return true;
     }
 
+    // Called from JAVA
+    public static void flipEGL() {
+        try {
+            EGL10 egl = (EGL10)EGLContext.getEGL();
+            egl.eglWaitNative(EGL10.EGL_CORE_NATIVE_ENGINE, null);
+            // drawing here
+            egl.eglWaitGL();
+            egl.eglSwapBuffers(PlaygroundActivity._EGLDisplay, PlaygroundActivity._EGLSurface);
+        } catch(Exception e) {
+            Log.v(PlayConfig.AppName, "flipEGL(): " + e);
+            for (StackTraceElement s : e.getStackTrace()) {
+                Log.v("SDL", s.toString());
+            }
+        }
+    }
+
     public static boolean createEGLContext() {
+        EGL10 egl = (EGL10)EGLContext.getEGL();
+        int EGL_CONTEXT_CLIENT_VERSION=0x3098;
+        int contextAttrs[] =
+            new int[] { EGL_CONTEXT_CLIENT_VERSION,
+                PlaygroundActivity._GLMajorVersion,
+                EGL10.EGL_NONE };
+        PlaygroundActivity._EGLContext =
+            egl.eglCreateContext(PlaygroundActivity._EGLDisplay,
+                PlaygroundActivity._EGLConfig,
+                EGL10.EGL_NO_CONTEXT,
+                contextAttrs);
+        if (PlaygroundActivity._EGLContext == EGL10.EGL_NO_CONTEXT) {
+            Log.e(PlayConfig.AppName, "Couldn't create context");
+            return false;
+        }
         return true;
     }
 
     public static boolean createEGLSurface() {
-        return true;
+        if (PlaygroundActivity._EGLDisplay != null && PlaygroundActivity._EGLConfig != null) {
+            EGL10 egl = (EGL10)EGLContext.getEGL();
+            if (PlaygroundActivity._EGLContext == null) createEGLContext();
+            Log.v(PlayConfig.AppName, "Creating new EGL Surface");
+            EGLSurface surface =
+                egl.eglCreateWindowSurface(PlaygroundActivity._EGLDisplay,
+                        PlaygroundActivity._EGLConfig,
+                        PlaygroundActivity._surface,
+                        null);
+            if (surface == EGL10.EGL_NO_SURFACE) {
+                Log.e(PlayConfig.AppName, "Couldn't create surface");
+                return false;
+            }
+            if (!egl.eglMakeCurrent(PlaygroundActivity._EGLDisplay, surface, surface, PlaygroundActivity._EGLContext)) {
+                Log.e(PlayConfig.AppName, "Old EGL Context doesnt work, trying with a new one");
+                createEGLContext();
+                if (!egl.eglMakeCurrent(PlaygroundActivity._EGLDisplay, surface, surface, PlaygroundActivity._EGLContext)) {
+                    Log.e(PlayConfig.AppName, "Failed making EGL Context current");
+                    return false;
+                }
+            }
+            PlaygroundActivity._EGLSurface = surface;
+            return true;
+        }
+        return false;
     }
+
 
     public static PlaygroundActivity getSingleton() {
         return _singleton;
@@ -176,6 +259,10 @@ public class PlaygroundActivity extends Activity {
         msg.obj = data;
         commandHandler.sendMessage(msg);
     }
+
+    // This is going to be called within the PlayThread
+    public static native void initGambit();
+    public static native void jniInit();
 }
 
 class PlayThread extends Thread {
@@ -190,8 +277,8 @@ class PlayThread extends Thread {
 
     public void run() {
         // Set up Gambit
-        jniInit();
-        initGambit();
+        PlaygroundActivity.jniInit();
+        PlaygroundActivity.initGambit();
         ////////////////////// Here we enter Gambit
         try { 
             while ( true ) { // Instead of a loop, this will be Gambit's execution
@@ -238,9 +325,6 @@ class PlayThread extends Thread {
         // TODO: Fill with String argument
         _activity.receiveMessage("GAMBIT SAYS HELLO!!!");
     }
-
-    public static native void initGambit();
-    public static native void jniInit();
 }
 
 

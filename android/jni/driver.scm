@@ -83,7 +83,7 @@ EXTERN void Java_org_playground_gambit_PlayThread_jniInit(JNIEnv* env, jclass cl
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "jni_init_bindings()");
     java_env = env;
     gambit_class = (jclass)(*env)->NewGlobalRef(env,cls);
-    j_send_string_message_to_activity  = (*java_env)->GetStaticMethodID(java_env, gambit_class, "sendMessageToActivity", "()V");
+    j_send_string_message_to_activity  = (*java_env)->GetStaticMethodID(java_env, gambit_class, "sendStringMessageToActivity", "()V");
     if(!j_send_string_message_to_activity) {
         __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "Couldn't locate Java callbacks");
     }
@@ -110,15 +110,18 @@ EXTERN void send_string_message_to_activity()
 /**
  * Our saved state data.
  */
+ /*
 struct saved_state {
     float angle;
     int32_t x;
     int32_t y;
 };
+*/
 
 /**
  * Shared state for our app.
  */
+ /*
 struct engine {
     int animating;
     EGLDisplay display;
@@ -127,9 +130,10 @@ struct engine {
     int32_t width;
     int32_t height;
 };
+*/
 
 NativeWindowType display_window;
-struct engine engine;
+//struct engine engine;
 
 /**
  * Initialize an EGL context for the current display.
@@ -152,30 +156,32 @@ static int egl_init() {
     EGLint w, h, dummy, format;
     EGLint egl_major_version, egl_minor_version;
     EGLint numConfigs;
-    EGLConfig config;
+    EGLConfig egl_config;
     EGLSurface egl_surface;
     EGLContext egl_context;
 
     EGLDisplay egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
     display_window = android_createDisplaySurface();
-    eglInitialize(display, &egl_major_version, &egl_minor_version);
+    //display_window = eglCreateWindowSurface();
+
+    eglInitialize(egl_display, &egl_major_version, &egl_minor_version);
     printf("GL Version: %d.%d\n", egl_major_version, egl_minor_version);
 
     /* Here, the application chooses the configuration it desires. In this
      * sample, we have a very simplified selection process, where we pick
      * the first EGLConfig that matches our criteria */
-    if (!eglChooseConfig(egl_display, attribs, &config, 1, &numConfigs))
+    if (!eglChooseConfig(egl_display, attribs, &egl_config, 1, &numConfigs))
     {
       printf("eglChooseConfig failed\n");
-      if (eglContext==0) printf("Error code: %x\n", eglGetError());
+      if (egl_context == 0) printf("Error code: %x\n", eglGetError());
     }
 
     /* EGL_NATIVE_VISUAL_ID is an attribute of the EGLConfig that is
      * guaranteed to be accepted by ANativeWindow_setBuffersGeometry().
      * As soon as we picked a EGLConfig, we can safely reconfigure the
      * ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
-    eglGetConfigAttrib(egl_display config, EGL_NATIVE_VISUAL_ID, &format);
+    eglGetConfigAttrib(egl_display, egl_config, EGL_NATIVE_VISUAL_ID, &format);
 
     ANativeWindow_setBuffersGeometry(display_window, 0, 0, format);
 
@@ -184,13 +190,13 @@ static int egl_init() {
     context = eglCreateContext(display, config, NULL, NULL);
     */
 
-    egl_context = eglCreateContext(egl_display, config, EGL_NO_CONTEXT, NULL);
+    egl_context = eglCreateContext(egl_display, egl_config, EGL_NO_CONTEXT, NULL);
     if (egl_context == 0) LOGE("Error code: %x\n", eglGetError());
 
-    egl_surface = eglCreateWindowSurface(eglDisplay, eglConfig, displayWindow, NULL);
+    egl_surface = eglCreateWindowSurface(egl_display, egl_config, display_window, NULL);
     if (egl_surface == 0) LOGE("Error code: %x\n", eglGetError());
 
-    if (eglMakeCurrent(gel_display, egl_surface, egl_surface, egl_context) == EGL_FALSE) {
+    if (eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context) == EGL_FALSE) {
         LOGE("Unable to eglMakeCurrent");
         return -1;
     }

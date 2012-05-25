@@ -85,7 +85,7 @@ static jmethodID j_send_binary_message_to_activity;
 static jmethodID j_init_egl;
 static jmethodID j_flip_egl;
 
-EXTERN void Java_org_playground_gambit_PlaygroundActivity_jniInit(JNIEnv* env, jclass cls, jobject obj)
+EXTERN void Java_org_playground_gambit_PGThread_jniInit(JNIEnv* env, jclass cls, jobject obj)
 {
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "ENTER native function: jniInit()");
     java_env = env;
@@ -128,7 +128,7 @@ ___END_C_LINKAGE
 
 ___setup_params_struct setup_params;
 
-void Java_org_playground_gambit_PlaygroundActivity_initGambit(JNIEnv *env, jobject obj)
+void Java_org_playground_gambit_PGThread_initGambit(JNIEnv *env, jobject obj)
 {
 	// Taken from gambit, lib/main.c. 
 	int debug_settings = ___DEBUG_SETTINGS_INITIAL;

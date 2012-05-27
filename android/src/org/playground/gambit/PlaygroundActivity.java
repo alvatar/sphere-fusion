@@ -48,7 +48,7 @@ public class PlaygroundActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         // Set up Surface
-        _surface = new PGSurface(getApplication()); // FIXME: this instead of getApp????
+        _surface = new PGSurface(this, getApplication()); // FIXME: this instead of getApp????
         setContentView(_surface);
         SurfaceHolder holder = _surface.getHolder(); // FIXME: WTF????
     }
@@ -101,10 +101,16 @@ public class PlaygroundActivity extends Activity {
         return _surface;
     }
 
-    //********************
-    // MESSAGE HANDLING
-    //********************
+    public static PGThread getPGThread() {
+        return _playThread;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Message handling
+    ////////////////////////////////////////////////////////////////////////////
+
     static Handler commandHandler = new Handler() {
+        @Override
         public void handleMessage(Message msg) {
             Log.v(PGConfig.AppName, "ACTIVITY: message received [" + Thread.currentThread().getId() + "] -- " + (String)msg.obj);
             /*
@@ -127,10 +133,12 @@ public class PlaygroundActivity extends Activity {
 */
 class PGSurface extends SurfaceView implements SurfaceHolder.Callback, 
     View.OnTouchListener {
+        PlaygroundActivity _parentActivity;
 
-    public PGSurface(Context context) {
+    public PGSurface(PlaygroundActivity parent, Context context) {
         super(context);
         getHolder().addCallback(this); 
+        _parentActivity = parent;
     
         setFocusable(true);
         setFocusableInTouchMode(true);
@@ -142,7 +150,14 @@ class PGSurface extends SurfaceView implements SurfaceHolder.Callback,
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v(PGConfig.AppName, "surfaceCreated()");
         holder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
-        PGThread.createEGLSurface();
+        //PGThread.createEGLSurface();
+        /*
+        PGThread thread = _parentActivity.getPGThread();
+        if (thread != null) {
+            thread.createEGLSurfaceInThread();
+        }
+        */
+
     }
 
     @Override
@@ -201,7 +216,7 @@ class PGSurface extends SurfaceView implements SurfaceHolder.Callback,
             break;
         }
         //SDLActivity.onNativeResize(width, height, sdlFormat);
-        Log.v(PGConfig.AppName, "Window size:" + width + "x"+height);
+        Log.v(PGConfig.AppName, "Window size:" + width + "x" + height);
 
         PlaygroundActivity.startPGThread();
     }
@@ -241,7 +256,9 @@ class PGSurface extends SurfaceView implements SurfaceHolder.Callback,
     PGConfig. All globals are placed here.
 */
 class PGConfig {
-    static String AppName = "Playground";
+    static final String AppName = "Playground";
+    static final int ON_PAUSE = 0;
+    static final int ON_RESUME = 1;
 }
 
 /**
@@ -266,40 +283,29 @@ class PGThread extends Thread {
     }
 
     public void run() {
-        // Set up Gambit
         PGThread.jniInit();
-        PGThread.enterGambit();
-        ////////////////////// Here we enter Gambit
+        // TODO: This can be called from Gambit or here. Where is best? Probably in Gambit, so it can choose configuration
+        PGThread.initEGL(1,0);
         try { 
-            while ( true ) { // Instead of a loop, this will be Gambit's execution
-                // This block will be called from within Gambit on demand
-                if(availableMessages() > 0) {
-                    Log.v(PGConfig.AppName, "GAMBIT: message received [" + Thread.currentThread().getId() + "] -- " + getMessage());
-                }
-                sleep( 500 ); 
-                _activity.receiveMessage("COMMAND FROM GAMBIT TO ACTIVITY (SIMULATED FROM JAVA)");
-            }
+            PGThread.enterGambit();
         }  
         catch( InterruptedException e ) { }
-        //////////////////////
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // Messaging
     ////////////////////////////////////////////////////////////////////////////
 
-    public synchronized void receiveMessage(String m) throws InterruptedException {
-        while(_messages.size() == MAX_MESSAGES) {
+    // PGThread receives a string message
+    public synchronized void receiveStringMessage(String m) throws InterruptedException {
+        while(pendingMessages() >= MAX_MESSAGES) {
             wait();
         }
         _messages.addElement(m);
         notify();
     }
 
-    protected synchronized int availableMessages() {
-        return _messages.size();
-    }
-
+    // Read the pending messages
     protected synchronized String getMessage() throws InterruptedException {
         //notify();
         //while(_messages.isEmpty()) {
@@ -314,16 +320,21 @@ class PGThread extends Thread {
         return m;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Called from native code 
-    ////////////////////////////////////////////////////////////////////////////
-
-    public static void sendStringMessageToActivity() {
-        // TODO: Fill with String argument
-        _activity.receiveMessage("GAMBIT SAYS HELLO!!!");
+    public synchronized int pendingMessages() throws InterruptedException {
+        return _messages.size();
     }
 
+    // Send a message to the activity
+    public static void sendStringMessageToActivity(String m) {
+        _activity.receiveMessage(m);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // EGL
+    ////////////////////////////////////////////////////////////////////////////
+    
     public static boolean initEGL(int majorVersion, int minorVersion) {
+        Log.v(PGConfig.AppName, "initEGL()");
         if (PGThread._EGLDisplay == null) {
             try {
                 EGL10 egl = (EGL10)EGLContext.getEGL();
@@ -382,29 +393,12 @@ class PGThread extends Thread {
         }
     }
 
-    public static boolean createEGLContext() {
-        EGL10 egl = (EGL10)EGLContext.getEGL();
-        int EGL_CONTEXT_CLIENT_VERSION=0x3098;
-        int contextAttrs[] =
-            new int[] { EGL_CONTEXT_CLIENT_VERSION,
-                PGThread._GLMajorVersion,
-                EGL10.EGL_NONE };
-        PGThread._EGLContext =
-            egl.eglCreateContext(PGThread._EGLDisplay,
-                PGThread._EGLConfig,
-                EGL10.EGL_NO_CONTEXT,
-                contextAttrs);
-        if (PGThread._EGLContext == EGL10.EGL_NO_CONTEXT) {
-            Log.e(PGConfig.AppName, "Couldn't create context");
-            return false;
-        }
-        return true;
-    }
-
     public static boolean createEGLSurface() {
         if (PGThread._EGLDisplay != null && PGThread._EGLConfig != null) {
             EGL10 egl = (EGL10)EGLContext.getEGL();
-            if (PGThread._EGLContext == null) createEGLContext();
+            if (PGThread._EGLContext == null) {
+                createEGLContext();
+            }
             Log.v(PGConfig.AppName, "Creating new EGL Surface");
             EGLSurface surface =
                 egl.eglCreateWindowSurface(PGThread._EGLDisplay,
@@ -429,10 +423,32 @@ class PGThread extends Thread {
         return false;
     }
 
+    // Used by createEGLSurface
+    protected static boolean createEGLContext() {
+        EGL10 egl = (EGL10)EGLContext.getEGL();
+        int EGL_CONTEXT_CLIENT_VERSION=0x3098;
+        int contextAttrs[] =
+            new int[] { EGL_CONTEXT_CLIENT_VERSION,
+                PGThread._GLMajorVersion,
+                EGL10.EGL_NONE };
+        PGThread._EGLContext =
+            egl.eglCreateContext(PGThread._EGLDisplay,
+                PGThread._EGLConfig,
+                EGL10.EGL_NO_CONTEXT,
+                contextAttrs);
+        if (PGThread._EGLContext == EGL10.EGL_NO_CONTEXT || PGThread._EGLContext == null) {
+            Log.e(PGConfig.AppName, "Couldn't create EGL context");
+            return false;
+        } else {
+            Log.e(PGConfig.AppName, "New EGL context created");
+        }
+        return true;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Native methods
     ////////////////////////////////////////////////////////////////////////////
 
     public static native void jniInit();
-    public static native void enterGambit();
+    public static native void enterGambit() throws InterruptedException;
 }

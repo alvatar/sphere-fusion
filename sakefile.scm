@@ -140,7 +140,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 (define-task android (android-compile)
   (gambit-eval-here
-   '(shell-command "ant -s android/build.xml debug install")))
+   '(shell-command "ant -s android/build.xml clean debug install")))
 
 ;-------------------------------------------------------------------------------
 ; Common

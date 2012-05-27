@@ -27,29 +27,30 @@
        (define (,setter-name f)
          (set! ,global f)))))
 
-(generate-callback on-create () "gambit_on_create")
-(generate-callback on-pause () "gambit_on_pause")
-(generate-callback on-resume () "gambit_on_resume")
-(generate-callback on-destroy () "gambit_on_destroy")
-(generate-callback on-surface-created () "gambit_surface_created")
-(generate-callback on-surface-destroy () "gambit_surface_destroy")
-(generate-callback on-surface-changed () "gambit_surface_changed")
-(generate-callback on-touch-down () "gambit_on_touch_down")
-(generate-callback on-touch-up () "gambit_on_touch_up")
-(generate-callback on-touch-move () "gambit_on_touch_move")
+;(generate-callback on-create () "gambit_on_create")
+;(generate-callback on-pause () "gambit_on_pause")
+;(generate-callback on-resume () "gambit_on_resume")
+;(generate-callback on-destroy () "gambit_on_destroy")
+;(generate-callback on-surface-created () "gambit_surface_created")
+;(generate-callback on-surface-destroy () "gambit_surface_destroy")
+;(generate-callback on-surface-changed () "gambit_surface_changed")
+;(generate-callback on-touch-down () "gambit_on_touch_down")
+;(generate-callback on-touch-up () "gambit_on_touch_up")
+;(generate-callback on-touch-move () "gambit_on_touch_move")
 
 ;;; Main driver code
 
 (c-declare #<<end-c-declare
 
-#include "org_playground_gambit.h"
-#include <string.h>
-#include <stdio.h>
-
 #include <jni.h>
 #include <android/log.h>
 
+#include <string.h>
+#include <stdio.h>
+
 #include <GLES/gl.h>
+
+#include "org_playground_gambit.h"
 
 /*******************************************************************************
  Functions called by JNI
@@ -59,8 +60,12 @@
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-///////////////// TODO: DEFINE IF C++
+#if defined __cplusplus
+#define EXTERN extern "C" 
+#else
 #define EXTERN 
+typedef enum { false, true } bool;
+#endif
 
 
 static JNIEnv* java_env = NULL;
@@ -81,7 +86,7 @@ EXTERN jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 static jclass activity_class;
 //  Methods
 static jmethodID j_send_string_message_to_activity;
-static jmethodID j_send_binary_message_to_activity;
+// TODO: static jmethodID j_send_binary_message_to_activity;
 static jmethodID j_init_egl;
 static jmethodID j_flip_egl;
 
@@ -90,20 +95,43 @@ EXTERN void Java_org_playground_gambit_PGThread_jniInit(JNIEnv* env, jclass cls,
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "ENTER native function: jniInit()");
     java_env = env;
     activity_class = (jclass)(*env)->NewGlobalRef(env,cls);
-    //j_send_string_message_to_activity = (*java_env)->GetStaticMethodID(java_env, activity_class, "sendStringMessageToActivity", "()V");
+    j_send_string_message_to_activity = (*java_env)->GetStaticMethodID(java_env, activity_class, "sendStringMessageToActivity", "(Ljava/lang/String;)V");
+    //j_send_binary_message_to_activity = (*java_env)->GetStaticMethodID(java_env, activity_class, "sendBinaryMessageToActivity", "()V");
     j_init_egl = (*java_env)->GetStaticMethodID(java_env, activity_class, "initEGL","(II)Z");
     j_flip_egl = (*java_env)->GetStaticMethodID(java_env, activity_class, "flipEGL","()V");
 
-    if(/*!j_send_string_message_to_activity ||*/ !j_init_egl || !j_flip_egl) {
+    if(!j_send_string_message_to_activity || /*!j_send_binary_message_to_activity ||*/ !j_init_egl || !j_flip_egl) {
         __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "Couldn't locate Java callbacks");
     }
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "EXIT native function: jniInit()");
 }
 
-EXTERN void send_string_message_to_activity()
+EXTERN void send_string_message_to_activity(const char* m)
 {
-    (*java_env)->CallStaticVoidMethod(java_env, activity_class, j_send_string_message_to_activity); 
+    (*java_env)->CallStaticVoidMethod(java_env,
+                                       activity_class,
+                                       j_send_string_message_to_activity,
+                                       (*java_env)->NewStringUTF(java_env,m)); 
 }
+
+EXTERN bool pending_messages_from_activity()
+{
+    // TODO!!!
+    return true;
+}
+
+EXTERN const char* get_string_message_from_activity(const char* m)
+{
+    // TODO!!!
+    return "";
+}
+
+/*
+EXTERN void send_binary_message_to_activity()
+{
+    (*java_env)->CallStaticVoidMethod(java_env, activity_class, j_send_binary_message_to_activity); 
+}
+*/
 
 EXTERN void init_egl(int major_version, int minor_version)
 {
@@ -158,15 +186,24 @@ void Java_org_playground_gambit_PGThread_enterGambit(JNIEnv *env, jobject obj)
 	setup_params.linker = LINKER;
     setup_params.debug_settings = debug_settings;
 	
+  // Gambit initialization
 	___setup(&setup_params);
 
-  //send_string_message_to_activity();
+  //init_egl(1,0);
 
-  init_egl(1,0);
-  glClearColor(1.0, 1.0, 0.0, 1.0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  flip_egl();
-    // FIXME: NEED TO DO CLEANUP AFTER!
+  int i;
+  for (i = 0; i<20; i++) {
+    send_string_message_to_activity("Message from Gambit to Main Activity");
+    const struct timespec req = { .tv_sec = 0,
+                                  .tv_nsec = 500000000 };
+    nanosleep(&req, NULL);
+
+    glClearColor(1.0, 1.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    flip_egl();
+  }
+
+  // Gambit cleanup
     ___cleanup();
 }
 

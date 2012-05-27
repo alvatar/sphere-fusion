@@ -69,9 +69,14 @@
 			</exec>
       -->
 
+      <!--
 			<exec dir="jni" executable="sh" failonerror="true">
 				<arg value="-c"/>
 				<arg value="ndk-build"/>
+				<arg value="-j"/>
+			</exec>
+      -->
+			<exec dir="jni" executable="ndk-build" failonerror="true">
 				<arg value="-j"/>
 			</exec>
 		</target>

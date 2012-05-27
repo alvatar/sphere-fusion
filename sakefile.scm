@@ -88,7 +88,7 @@
 
 (define-task android-generate-mk ()
   (call-with-output-file
-      "android/jni/Android.mk"
+      "android/jni/build/Android.mk"
     (lambda (file)
       (display
        (string-append
@@ -109,13 +109,12 @@ LOCAL_SRC_FILES :="
                str
                (recur (cdr files)
                       (string-append str
-                                     " build/"
                                      (car files)
                                      ".c \\
 "))))
-         (string-append " build/" link-module))
+         link-module)
 "
-LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit
+LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I.
 LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
 
 include $(BUILD_SHARED_LIBRARY)

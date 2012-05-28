@@ -100,7 +100,7 @@ LOCAL_PATH := $(call my-dir)
 #include jni/cairo.mk
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := gambit
+LOCAL_MODULE := native-activity
 LOCAL_SRC_FILES :=" 
         (string-append
          (let recur ((files android-modules)
@@ -115,9 +115,13 @@ LOCAL_SRC_FILES :="
          link-module)
 "
 LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I.
-LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
+LOCAL_LDLIBS := -ldl -fno-short-enums -lc -landroid -llog -lEGL -lGLESv1_CM -L./gambit -lgambc
+LOCAL_STATIC_LIBRARIES := android_native_app_glue
 
 include $(BUILD_SHARED_LIBRARY)
+
+$(call import-module,android/native_app_glue)
+
 ")
        file))))
 

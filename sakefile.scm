@@ -133,7 +133,7 @@ $(call import-module,android/native_app_glue)
       (let ((exe-file (string-append ,android-current-build-directory ,project-name)))
         (for-each
          (lambda (m)
-           (compile-file-to-c
+           (compile-file-to-target
             (string-append "android/jni/" m)
             options: '(report)
             output: (string-append ,android-current-build-directory m ".c")))

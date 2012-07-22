@@ -11,7 +11,7 @@
 ;-------------------------------------------------------------------------------
 
 (define project-modules
-  '("driver" "fib"))
+  '("driver" "main"))
 
 (define includes "-I/usr/include/cairo -I/usr/include/freetype2 -I/usr/local/include/SDL2 -I/usr/include/GL")
 
@@ -32,7 +32,6 @@
       (include "~~prelude/prelude#.scm")
       (%load base: ffi)
       (%load math: math)
-      (%load cairo: cairo)
       (%load opengl: gl)
       (%load sdl2: sdl2)
       (%load main))))
@@ -47,7 +46,7 @@
   "android/jni/build/")
 
 (define android-modules
-  '("driver" "fib"))
+  '("driver" "main"))
 
 (define arm-modules
   '((base: ffi)

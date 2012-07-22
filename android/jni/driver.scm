@@ -1,8 +1,5 @@
 ;;; logging
 
-(c-define (test-proc x y) (int int) int "scheme_proc" ""
-          (+ x y))
-
 (define android:log-info
   (c-lambda (char-string char-string)
             void
@@ -93,7 +90,7 @@ void SDL_main() {
     LOGI("+++++++++++++++++++++++++++++++++++++++++++");
     int i = 0;
     for(i=0; i<20; i++) {
-        LOGI("Fib(): %i\n", fib(3));
+        LOGI("Fib(): %i\n", scheme_main());
     }
 }
 end-of-c-declare

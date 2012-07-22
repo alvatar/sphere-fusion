@@ -33,6 +33,7 @@
 #include "SDL_x11framebuffer.h"
 #include "SDL_x11shape.h"
 #include "SDL_x11touch.h" 
+#include "SDL_x11xinput2.h"
 
 #if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
 #include "SDL_x11opengles.h"
@@ -110,9 +111,6 @@ X11_DeleteDevice(SDL_VideoDevice * device)
     }
     SDL_free(data->windowlist);
     SDL_free(device->driverdata);
-#if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
-    SDL_free(device->gles_data);
-#endif
     SDL_free(device);
 
     SDL_X11_UnloadSymbols();
@@ -143,14 +141,6 @@ X11_CreateDevice(int devindex)
     }
     device->driverdata = data;
 
-#if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
-    device->gles_data = (struct SDL_PrivateGLESData *) SDL_calloc(1, sizeof(SDL_PrivateGLESData));
-    if (!device->gles_data) {
-        SDL_OutOfMemory();
-        return NULL;
-    }
-#endif
-
     /* FIXME: Do we need this?
        if ( (SDL_strncmp(XDisplayName(display), ":", 1) == 0) ||
        (SDL_strncmp(XDisplayName(display), "unix:", 5) == 0) ) {
@@ -174,6 +164,7 @@ X11_CreateDevice(int devindex)
     }
 #endif
     if (data->display == NULL) {
+        SDL_free(device->driverdata);
         SDL_free(device);
         SDL_SetError("Couldn't open X11 display");
         return NULL;
@@ -186,6 +177,7 @@ X11_CreateDevice(int devindex)
     device->VideoInit = X11_VideoInit;
     device->VideoQuit = X11_VideoQuit;
     device->GetDisplayModes = X11_GetDisplayModes;
+    device->GetDisplayBounds = X11_GetDisplayBounds;
     device->SetDisplayMode = X11_SetDisplayMode;
     device->SuspendScreenSaver = X11_SuspendScreenSaver;
     device->PumpEvents = X11_PumpEvents;
@@ -225,8 +217,7 @@ X11_CreateDevice(int devindex)
     device->GL_GetSwapInterval = X11_GL_GetSwapInterval;
     device->GL_SwapWindow = X11_GL_SwapWindow;
     device->GL_DeleteContext = X11_GL_DeleteContext;
-#endif
-#if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
+#elif SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
     device->GL_LoadLibrary = X11_GLES_LoadLibrary;
     device->GL_GetProcAddress = X11_GLES_GetProcAddress;
     device->GL_UnloadLibrary = X11_GLES_UnloadLibrary;
@@ -358,6 +349,8 @@ X11_VideoInit(_THIS)
     if (X11_InitModes(_this) < 0) {
         return -1;
     }
+
+    X11_InitXinput2(_this);
 
     if (X11_InitKeyboard(_this) != 0) {
         return -1;

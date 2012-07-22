@@ -19,27 +19,20 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef _SDL_config_macosx_h
-#define _SDL_config_macosx_h
+#ifndef _SDL_config_android_h
+#define _SDL_config_android_h
 
 #include "SDL_platform.h"
 
-/* This gets us MAC_OS_X_VERSION_MIN_REQUIRED... */
-#include <AvailabilityMacros.h>
+/**
+ *  \file SDL_config_android.h
+ *  
+ *  This is a configuration that can be used to build SDL for Android
+ */
 
-/* This is a set of defines to configure the SDL features */
+#include <stdarg.h>
 
-#ifdef __LP64__
-	#define SIZEOF_VOIDP 8
-#else
-	#define SIZEOF_VOIDP 4
-#endif
-
-/* Useful headers */
-/* If we specified an SDK or have a post-PowerPC chip, then alloca.h exists. */
-#if ( (MAC_OS_X_VERSION_MIN_REQUIRED >= 1030) || (!defined(__POWERPC__)) )
 #define HAVE_ALLOCA_H		1
-#endif
 #define HAVE_SYS_TYPES_H	1
 #define HAVE_STDIO_H	1
 #define STDC_HEADERS	1
@@ -59,6 +52,7 @@
 #define HAVE_GETENV	1
 #define HAVE_SETENV	1
 #define HAVE_PUTENV	1
+#define HAVE_SETENV	1
 #define HAVE_UNSETENV	1
 #define HAVE_QSORT	1
 #define HAVE_ABS	1
@@ -88,6 +82,9 @@
 #define HAVE_SSCANF	1
 #define HAVE_SNPRINTF	1
 #define HAVE_VSNPRINTF	1
+#define HAVE_M_PI	1
+#define HAVE_ATAN	1
+#define HAVE_ATAN2	1
 #define HAVE_CEIL	1
 #define HAVE_COPYSIGN	1
 #define HAVE_COS	1
@@ -104,18 +101,16 @@
 #define HAVE_SETJMP	1
 #define HAVE_NANOSLEEP	1
 #define HAVE_SYSCONF	1
-#define HAVE_SYSCTLBYNAME 1
-#define HAVE_ATAN 1
-#define HAVE_ATAN2 1
+
+#define SIZEOF_VOIDP 4
 
 /* Enable various audio drivers */
-#define SDL_AUDIO_DRIVER_COREAUDIO	1
-#define SDL_AUDIO_DRIVER_DISK	1
+#define SDL_AUDIO_DRIVER_ANDROID	1
 #define SDL_AUDIO_DRIVER_DUMMY	1
 
 /* Enable various input drivers */
-#define SDL_JOYSTICK_IOKIT	1
-#define SDL_HAPTIC_IOKIT	1
+#define SDL_JOYSTICK_ANDROID	1
+#define SDL_HAPTIC_DUMMY	1
 
 /* Enable various shared object loading systems */
 #define SDL_LOADSO_DLOPEN	1
@@ -128,50 +123,11 @@
 #define SDL_TIMER_UNIX	1
 
 /* Enable various video drivers */
-#define SDL_VIDEO_DRIVER_COCOA	1
-#define SDL_VIDEO_DRIVER_DUMMY	1
-#define SDL_VIDEO_DRIVER_X11 1
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC "/usr/X11R6/lib/libX11.6.dylib"
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC_XEXT "/usr/X11R6/lib/libXext.6.dylib"
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC_XINERAMA "/usr/X11R6/lib/libXinerama.1.dylib"
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC_XINPUT2 "/usr/X11R6/lib/libXi.6.dylib"
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC_XRANDR "/usr/X11R6/lib/libXrandr.2.dylib"
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC_XSS "/usr/X11R6/lib/libXss.1.dylib"
-#define SDL_VIDEO_DRIVER_X11_DYNAMIC_XVIDMODE "/usr/X11R6/lib/libXxf86vm.1.dylib"
-#define SDL_VIDEO_DRIVER_X11_XINERAMA 1
-/* 
-not included with Mac OS X at the moment...
-#define SDL_VIDEO_DRIVER_X11_XINPUT2 1
-#define SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS 1
-*/
-#define SDL_VIDEO_DRIVER_X11_XRANDR 1
-#define SDL_VIDEO_DRIVER_X11_XSCRNSAVER 1
-#define SDL_VIDEO_DRIVER_X11_XSHAPE 1
-#define SDL_VIDEO_DRIVER_X11_XVIDMODE 1
-#define SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM 1
+#define SDL_VIDEO_DRIVER_ANDROID 1
 
-#ifndef SDL_VIDEO_RENDER_OGL
-#define SDL_VIDEO_RENDER_OGL	1
-#endif
+/* Enable OpenGL ES */
+#define SDL_VIDEO_OPENGL_ES	1
+#define SDL_VIDEO_RENDER_OGL_ES	1
+#define SDL_VIDEO_RENDER_OGL_ES2	1
 
-/* Enable OpenGL support */
-#ifndef SDL_VIDEO_OPENGL
-#define SDL_VIDEO_OPENGL	1
-#endif
-#ifndef SDL_VIDEO_OPENGL_CGL
-#define SDL_VIDEO_OPENGL_CGL	1
-#endif
-#ifndef SDL_VIDEO_OPENGL_GLX
-#define SDL_VIDEO_OPENGL_GLX	1
-#endif
-
-/* Enable system power support */
-#define SDL_POWER_MACOSX 1
-
-/* Enable assembly routines */
-#define SDL_ASSEMBLY_ROUTINES	1
-#ifdef __ppc__
-#define SDL_ALTIVEC_BLITTERS	1
-#endif
-
-#endif /* _SDL_config_macosx_h */
+#endif /* _SDL_config_minimal_h */

@@ -18,8 +18,19 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "SDL_config.h"
 
+/**
+ *  \file SDL_system.h
+ *  
+ *  Include file for platform specific SDL API functions
+ */
+
+#ifndef _SDL_system_h
+#define _SDL_system_h
+
+#include "SDL_stdinc.h"
+
+#include "begin_code.h"
 /* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -27,31 +38,19 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-/* Interface from the SDL library into the Android Java activity */
-extern SDL_bool Android_JNI_CreateContext(int majorVersion, int minorVersion);
-extern void Android_JNI_SwapWindow();
-extern void Android_JNI_SetActivityTitle(const char *title);
-extern SDL_bool Android_JNI_GetAccelerometerValues(float values[3]);
+#if __IPHONEOS__
 
-// Audio support
-extern int Android_JNI_OpenAudioDevice(int sampleRate, int is16Bit, int channelCount, int desiredBufferFrames);
-extern void* Android_JNI_GetAudioBuffer();
-extern void Android_JNI_WriteAudioBuffer();
-extern void Android_JNI_CloseAudioDevice();
+#include "SDL_video.h"
 
-#include "SDL_rwops.h"
+extern DECLSPEC int SDLCALL SDL_iPhoneSetAnimationCallback(SDL_Window * window, int interval, void (*callback)(void*), void *callbackParam);
+extern DECLSPEC void SDLCALL SDL_iPhoneSetEventPump(SDL_bool enabled);
 
-int Android_JNI_FileOpen(SDL_RWops* ctx, const char* fileName, const char* mode);
-long Android_JNI_FileSeek(SDL_RWops* ctx, long offset, int whence);
-size_t Android_JNI_FileRead(SDL_RWops* ctx, void* buffer, size_t size, size_t maxnum);
-size_t Android_JNI_FileWrite(SDL_RWops* ctx, const void* buffer, size_t size, size_t num);
-int Android_JNI_FileClose(SDL_RWops* ctx);
+extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardShow(SDL_Window * window);
+extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardHide(SDL_Window * window);
+extern DECLSPEC SDL_bool SDLCALL SDL_iPhoneKeyboardIsShown(SDL_Window * window);
+extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardToggle(SDL_Window * window);
 
-// Threads
-#include <jni.h>
-static void Android_JNI_ThreadDestroyed(void*);
-JNIEnv *Android_JNI_GetEnv(void);
-int Android_JNI_SetupThread(void);
+#endif
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus
@@ -59,5 +58,8 @@ int Android_JNI_SetupThread(void);
 }
 /* *INDENT-ON* */
 #endif
+#include "close_code.h"
+
+#endif /* _SDL_system_h */
 
 /* vi: set ts=4 sw=4 expandtab: */

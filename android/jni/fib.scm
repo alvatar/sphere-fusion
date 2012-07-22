@@ -12,3 +12,5 @@
 (c-define (c-fib x) (int32) int "fib" "" (fib x))
 
 (c-define (c-testports) () char-string "testports" "" (test-ports))
+
+(c-declare "void SDL_main() {}")

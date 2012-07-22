@@ -47,7 +47,8 @@
   "android/jni/build/")
 
 (define android-modules
-  '("driver" "fib"))
+  '("fib"))
+  ;'("driver" "fib"))
 
 #;
 (define arm-modules
@@ -95,16 +96,15 @@
         "
 LOCAL_PATH := $(call my-dir)
 
-# If compiling cairo & pixman:
-#include jni/pixman.mk
-#include jni/cairo.mk
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := native-activity
-LOCAL_SRC_FILES :=" 
+LOCAL_MODULE := main
+LOCAL_SRC_FILES :=  \\
+../SDL/src/main/android/SDL_android_main.cpp \\
+"
         (string-append
          (let recur ((files android-modules)
-                     (str " "))
+                     (str ""))
            (if (null? files)
                str
                (recur (cdr files)
@@ -114,9 +114,10 @@ LOCAL_SRC_FILES :="
 "))))
          link-module)
 "
-LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I.
+LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include
 LOCAL_LDLIBS := -ldl -fno-short-enums -lc -landroid -llog -lEGL -lGLESv1_CM -L./gambit -lgambc
-LOCAL_STATIC_LIBRARIES := android_native_app_glue
+LOCAL_SHARED_LIBRARIES := SDL2
+#LOCAL_STATIC_LIBRARIES := android_native_app_glue
 
 include $(BUILD_SHARED_LIBRARY)
 

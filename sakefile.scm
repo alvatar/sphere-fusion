@@ -117,7 +117,7 @@ LOCAL_SRC_FILES :=  \\
          link-module-filename)
 "
 LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include
-LOCAL_LDLIBS := -ldl -fno-short-enums -lc -landroid -llog -lEGL -lGLESv1_CM -L./gambit -lgambc
+LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
 LOCAL_SHARED_LIBRARIES := SDL2
 #LOCAL_STATIC_LIBRARIES := android_native_app_glue
 

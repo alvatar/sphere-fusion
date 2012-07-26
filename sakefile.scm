@@ -50,6 +50,7 @@
 
 (define arm-modules
   '((base: ffi)
+    (base: repl-server)
     (math: math)
     (opengl: gl-es)
     (sdl2: sdl2)))
@@ -86,6 +87,7 @@
   (make-directory android-build-directory))
 
 (define-task android-clean ()
+  (delete-file android-build-directory)
   (gambit-eval-here
    '(shell-command "ant -s android/build.xml clean")))
 

@@ -7,7 +7,7 @@ Scheme Playground is an open source project in C and Scheme that aims to be usef
 This software must be installed in order to use _Scheme Playground_. Follow instructions in their project pages:
 * __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
 * __Sake__: use this fork: http://github.com/alvatarc/sake
-* __Scheme Prelude__: http://github.com/alvatarc/scheme-prelude
+* __Scheme Base__: http://github.com/alvatarc/scheme-base
 
 ### Android support
 

@@ -2,7 +2,7 @@
 ; Configuration
 ;-------------------------------------------------------------------------------
 
-(include "~~prelude/prelude#.scm")
+(include "~~base/prelude#.scm")
 
 (define project-name "playground-prototype")
 
@@ -29,7 +29,7 @@
   (gambit-eval-here
    `(begin
       (define-cond-expand-feature sdl)
-      (include "~~prelude/prelude#.scm")
+      (include "~~base/prelude#.scm")
       (%load base: ffi)
       (%load math: math)
       (%load opengl: gl)
@@ -142,7 +142,7 @@ $(call import-module,android/native_app_glue)
   (gambit-eval-here
    `(begin
       (define-cond-expand-feature arm)
-      (include "~~prelude/prelude#.scm")
+      (include "~~base/prelude#.scm")
       (let ((exe-file (string-append ,android-build-directory ,project-name)))
         (for-each
          (lambda (m)

@@ -1,3 +1,5 @@
+lib
+tmp
 android/bin
 android/build
 android/dist
@@ -7,3 +9,5 @@ android/obj
 android/jni/build
 android/jni/gambit
 android/manifest.mf
+example-project/lib
+example-project/playground

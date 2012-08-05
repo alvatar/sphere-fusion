@@ -3,6 +3,7 @@
 ;-------------------------------------------------------------------------------
 
 (include "~~base/prelude#.scm")
+(%include sake)
 
 (define project-name "playground-prototype")
 
@@ -40,121 +41,54 @@
 ; Android
 ;-------------------------------------------------------------------------------
 
-;;; Configuration
-
-(define android-build-directory
-  "android/jni/build/")
-
-(define android-modules
-  '("driver" "main"))
-
-(define arm-modules
-  '((base: ffi)
-    (base: repl-server)
-    (math: math)
-    (opengl: gl-es)
-    (sdl2: sdl2)))
-
-;;; Filenames and paths
-  
-(define android-modules-filenames
-  (map (lambda (m) (string-append m ".c"))
-       android-modules))
-
-(define android-modules-relative-paths
-  (map (lambda (m) (string-append android-build-directory m ".c"))
-       android-modules))
-
-(define arm-modules-filenames
-  (map (lambda (m) (receive (path file-name)
-                       (module-path (car m) (cadr m))
-                       (string-append (keyword->string (car m)) "_" file-name)))
-       arm-modules))
-
-(define arm-modules-relative-paths
-  (map (lambda (m fn) (receive (path file-name)
-                       (module-path (car m) (cadr m))
-                       (string-append android-build-directory fn)))
-       arm-modules
-       arm-modules-filenames))
-
-(define link-module-filename
-  (string-append project-name "_.c"))
-
-;;; Tasks
+(define test-app-modules '((playground: app-test)))
 
 (define-task android-init ()
-  (make-directory android-build-directory))
+  (parameterize
+   ((playground-setup-directory ""))
+   (make-directory (lib-directory))
+   (make-directory (android-build-directory))))
 
 (define-task android-clean ()
-  (delete-file android-build-directory)
-  (gambit-eval-here
-   '(shell-command "ant -s android/build.xml clean")))
+  (task-run android-apptest-clean)
+  (parameterize
+   ((playground-setup-directory ""))
+   (delete-file (android-build-directory))
+   (delete-file (lib-directory))
+   (delete-file "tmp")
+   (gambit-eval-here
+   '(shell-command "ant -s android/build.xml clean"))))
 
-(define-task android-generate-mk ()
-  (call-with-output-file
-      "android/jni/build/Android.mk"
-    (lambda (file)
-      (display
-       (string-append
-        "
-LOCAL_PATH := $(call my-dir)
+(define-task android-prepare (android-init)
+  (parameterize
+   ((playground-setup-directory ""))
+   ;; Generate C files (only those belonging to playground library)
+   (android-generate-project-c-files
+    (let recur ((modules (android-base-modules)))
+      (cond ((null? modules) '())
+            ((eq? (caar modules) playground:)
+             (cons (car modules) (recur (cdr modules))))
+            (else (recur (cdr modules))))))
+   ;; Copy generated C files to Android directories
+   (for-each
+    (lambda (m) (copy-file
+            (string-append (%module-path-lib m) (%module-filename-c m))
+            (string-append (android-build-directory)
+                           (%module-filename-c m))))
+    (android-base-modules))))
 
-include $(CLEAR_VARS)
+(define-task android-apptest (android-prepare)
+  (parameterize
+   ((playground-setup-directory "tmp/"))
+   (unless (file-exists? (playground-setup-directory))
+           (setup-playground))
+   (android-generate-project-c-files test-app-modules)
+   (android-compile-and-link modules: test-app-modules)))
 
-LOCAL_MODULE := main
-LOCAL_SRC_FILES :=  \\
-../SDL/src/main/android/SDL_android_main.cpp \\
-"
-        (string-append
-         (let recur ((files (append arm-modules-filenames android-modules-filenames))
-                     (str ""))
-           (if (null? files)
-               str
-               (recur (cdr files)
-                      (string-append str
-                                     (car files)
-                                     " \\
-"))))
-         link-module-filename)
-"
-LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include
-LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
-LOCAL_SHARED_LIBRARIES := SDL2
-#LOCAL_STATIC_LIBRARIES := android_native_app_glue
+(define-task android-apptest-clean ()
+  (delete-file "tmp"))
 
-include $(BUILD_SHARED_LIBRARY)
-
-$(call import-module,android/native_app_glue)
-
-")
-       file))))
-
-(define-task android-compile (android-init android-generate-mk)
-  (for-each
-    (lambda (m fn)
-      (receive (path file-name)
-                       (module-path (car m) (cadr m))
-                       (copy-file (string-append path file-name)
-                                  (string-append (current-directory) android-build-directory fn))))
-      arm-modules
-      arm-modules-filenames)
-  (gambit-eval-here
-   `(begin
-      (define-cond-expand-feature arm)
-      (include "~~base/prelude#.scm")
-      (let ((exe-file (string-append ,android-build-directory ,project-name)))
-        (for-each
-         (lambda (m)
-           (compile-file-to-target
-            (string-append "android/jni/" m)
-            options: '(report)
-            output: (string-append ,android-build-directory m ".c")))
-         ',android-modules)
-        (link-incremental ',(append arm-modules-relative-paths android-modules-relative-paths)
-                          output: (string-append ,android-build-directory ,project-name "_.c"))))))
-
-(define-task android (android-compile)
+(define-task android (android-prepare)
   (gambit-eval-here
    '(shell-command "ant -s android/build.xml clean debug install")))
 

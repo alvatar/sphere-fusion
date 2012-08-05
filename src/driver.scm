@@ -43,7 +43,7 @@
 
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "SDL", __VA_ARGS__))
 
-#define LINKER ____20_playground_2d_prototype__
+#define LINKER ____20_linkfile__
 
 ___BEGIN_C_LINKAGE
 extern ___mod_or_lnk LINKER (___global_state_struct*);

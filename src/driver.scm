@@ -95,3 +95,7 @@ void SDL_main() {
 }
 end-of-c-declare
 )
+
+;;; Entry point for Scheme code
+
+(c-define (entry-point) () int "scheme_main" "" (begin (main) 0))

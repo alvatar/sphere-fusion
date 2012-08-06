@@ -17,21 +17,26 @@
 (define-task init ()
   (if (file-exists? (playgroynd-setup-directory))
       (error "It appears that the project has been initialized, please execute task \"force-init\" to re-initialize it")
-      (setup-playground)))
+      (playground-setup)))
 
 (define-task clean ()
-  (clean-playground))
+  (playground-clean))
 
 (define-task force-init ()
-  (clean-playground)
-  (setup-playground))
+  (playground-clean)
+  (playground-setup))
 
 (define-task run ()
   '())
 
+(define-task update ()
+  (if (file-exists? (playground-setup-directory))
+      (playground-update)
+      (playground-setup)))
+
 (define-task android ()
   (unless (file-exists? (playground-setup-directory))
-          (setup-playground))
+          (playground-setup))
   ;(android-add-asset-to-apk "logo.png")
   ;(android-add-asset-directory-to-apk "images")
   (android-generate-manifest-and-properties
@@ -40,7 +45,7 @@
   ;(android-generate-custom-manifest "")
   ;(android-generate-custom-local-properties "")
   ;(android-generate-custom-project-properties "")
-  (android-compile-with-modules
+  (android-compile-and-link
    modules: project-modules
    report-scheme: #f))
 

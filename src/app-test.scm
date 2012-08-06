@@ -104,5 +104,3 @@
       (SDL_GL_DeleteContext ctx)
       (SDL_DestroyWindow win)
       (SDL_Quit))))
-
-(c-define (entry-point) () int "scheme_main" "" (begin (main) 0))

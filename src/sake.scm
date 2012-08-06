@@ -11,11 +11,23 @@
 (define src-directory
   (make-parameter "src/"))
 
+(define android-directory-suffix
+  (make-parameter "android/"))
+
 (define (android-directory)
-  (string-append (playground-setup-directory) "android/"))
+  (string-append (playground-setup-directory) (android-directory-suffix)))
+
+(define android-jni-directory-suffix
+  (make-parameter "jni/"))
+
+(define (android-jni-directory)
+  (string-append (android-directory) (android-jni-directory-suffix)))
+
+(define android-build-directory-suffix
+  (make-parameter "build/"))
 
 (define (android-build-directory)
-  (string-append (android-directory) "jni/build/"))
+  (string-append (android-jni-directory) (android-build-directory-suffix)))
 
 (define (android-manifest-file)
   (string-append (android-directory) "AndroidManifest.xml"))
@@ -34,34 +46,58 @@
 (define android-link-file
   (make-parameter "linkfile_.c"))
 
+;;; Check whether playground is precompiled
+
+(define (playground-precompiled?)
+  (file-exists? (string-append (%library-path 'playground)
+                               (android-directory-suffix)
+                               (android-jni-directory-suffix)
+                               (android-build-directory-suffix))))
+
 ;;; Clean all playground files for current project
 
-(define (clean-playground)
+(define (playground-clean)
   (delete-file (playground-setup-directory))
   (delete-file (lib-directory)))
 
+;;; Update playground generated C files
+
+(define (playground-update)
+  (unless (playground-precompiled?)
+          (playground-clean)
+          (error "Prior to creating a Playground project, you need to run android-prepare in Playground Framework"))
+  (copy-file (string-append (%library-path 'playground)
+                            (android-directory-suffix)
+                            (android-jni-directory-suffix)
+                            (android-build-directory-suffix))
+             (android-build-directory-suffix)))
+
 ;;; Setup playground files for current project
 
-(define (setup-playground)
-  (clean-playground)
-  (make-directory (playground-setup-directory))
-  (make-directory (lib-directory))
-  (make-directory (string-append (playground-setup-directory) "android"))
-  (make-directory (string-append (playground-setup-directory) "android/jni"))
-  (let ((opath (string-append (%library-path 'playground) "android/"))
-        (dpath (string-append (playground-setup-directory) "android/")))
+(define (playground-setup)
+  (let* ((playground-path (%library-path 'playground))
+         (opath (string-append playground-path (android-directory-suffix))))
+    (playground-clean)
+    (unless (playground-precompiled?)
+            (playground-clean)
+            (error "Prior to creating a Playground project, you need to run android-prepare in Playground Framework"))
+    (playground-precompiled?)    
+    (make-directory (playground-setup-directory))
+    (make-directory (lib-directory))
+    (make-directory (android-jni-directory))
     (copy-files (map (lambda (n) (string-append opath n))
                      '("build.xml"
                        "local.properties"
                        "proguard-project.txt"
                        "src"))
-                dpath)
+                (android-directory))
     (copy-files (map (lambda (n) (string-append opath n))
                      '("jni/Android.mk"
                        "jni/SDL"
                        "jni/build"
                        "jni/gambit"))
-                (string-append dpath "jni"))))
+                (android-jni-directory))))
+
 
 ;-------------------------------------------------------------------------------
 ; Android
@@ -205,7 +241,7 @@ include $(BUILD_SHARED_LIBRARY)
                                   (supplied-modules '())
                                   (report-scheme #f))
   (unless (file-exists? (playground-setup-directory))
-          (error "You need to use (setup-playground) before compiling the project"))
+          (error "You need to use (playground-setup) before compiling the project"))
   (when (null? modules) (error "You must supply modules to compile"))
   (let ((all-modules (append (android-base-modules)
                              supplied-modules

@@ -81,7 +81,7 @@
   (parameterize
    ((playground-setup-directory "tmp/"))
    (unless (file-exists? (playground-setup-directory))
-           (setup-playground))
+           (playground-setup))
    (android-generate-project-c-files test-app-modules)
    (android-compile-and-link modules: test-app-modules)))
 

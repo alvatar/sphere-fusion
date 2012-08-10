@@ -20,13 +20,13 @@
 
 (define flags "-w")
 
-(define-task host-init ()
+(define-task host:init ()
   (make-directory (current-build-directory)))
 
-(define-task host-clean ()
+(define-task host:clean ()
   (make-directory (current-build-directory)))
 
-(define-task run (host-init)
+(define-task run (host:init)
   (gambit-eval-here
    `(begin
       (define-cond-expand-feature sdl)
@@ -41,60 +41,45 @@
 ; Android
 ;-------------------------------------------------------------------------------
 
-(define test-app-modules '((playground: app-test)))
-
-(define-task android-init ()
+(define-task android:init ()
   (parameterize
    ((playground-setup-directory ""))
    (make-directory (lib-directory))
    (make-directory (android-build-directory))))
 
-(define-task android-clean ()
-  (task-run android-apptest-clean)
+(define-task android:clean ()
+  (task-run android:apptest-clean)
   (parameterize
    ((playground-setup-directory ""))
    (delete-file (android-build-directory))
    (delete-file (lib-directory))
    (delete-file "tmp")
-   (gambit-eval-here
-   '(shell-command "ant -s android/build.xml clean"))))
+   (android-clean)))
 
-(define-task android-prepare (android-init)
+(define-task android:prepare (android:init)
   (parameterize
    ((playground-setup-directory ""))
    ;; Generate C files (only those belonging to playground library)
-   (android-generate-project-c-files
-    (let recur ((modules (android-base-modules)))
-      (cond ((null? modules) '())
-            ((eq? (caar modules) playground:)
-             (cons (car modules) (recur (cdr modules))))
-            (else (recur (cdr modules))))))
+   (android-select-and-generate-modules (android-base-modules))
    ;; Copy generated C files to Android directories
-   (for-each
-    (lambda (m) (copy-file
-            (string-append (%module-path-lib m) (%module-filename-c m))
-            (string-append (android-build-directory)
-                           (%module-filename-c m))))
-    (android-base-modules))))
+   (android-install-c-files (android-base-modules))))
 
-(define-task android-apptest (android-prepare)
+(define test-app-modules '((playground: app-test)))
+
+(define-task android:apptest (android:prepare)
   (parameterize
    ((playground-setup-directory "tmp/"))
-   (unless (file-exists? (playground-setup-directory))
+   (unless (playground-ready?)
            (playground-setup))
-   (android-generate-project-c-files test-app-modules)
+   (android-select-and-generate-modules test-app-modules)
    (android-compile-and-link modules: test-app-modules)))
 
-(define-task android-apptest-clean ()
+(define-task android:apptest-clean ()
   (delete-file "tmp"))
-
-(define-task android (android-prepare)
-  (gambit-eval-here
-   '(shell-command "ant -s android/build.xml clean debug install")))
 
 ;-------------------------------------------------------------------------------
 ; Common
 ;-------------------------------------------------------------------------------
 
-(define-task clean (android-clean host-clean)
+(define-task clean (android:clean host:clean)
   (delete-file (current-build-directory)))

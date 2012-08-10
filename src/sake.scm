@@ -65,7 +65,7 @@
 (define (playground-update)
   (unless (playground-precompiled?)
           (playground-clean)
-          (error "Prior to creating a Playground project, you need to run android-prepare in Playground Framework"))
+          (error "Prior to creating a Playground project, you need to run android:prepare in Playground Framework"))
   (copy-file (string-append (%library-path 'playground)
                             (android-directory-suffix)
                             (android-jni-directory-suffix)
@@ -80,7 +80,7 @@
     (playground-clean)
     (unless (playground-precompiled?)
             (playground-clean)
-            (error "Prior to creating a Playground project, you need to run android-prepare in Playground Framework"))
+            (error "Prior to creating a Playground project, you need to run android:prepare in Playground Framework"))
     (playground-precompiled?)    
     (make-directory (playground-setup-directory))
     (make-directory (lib-directory))
@@ -98,6 +98,10 @@
                        "jni/gambit"))
                 (android-jni-directory))))
 
+;;; Check whether playground is ready and setup
+
+(define (playground-ready?)
+  (file-exists? (playground-setup-directory)))
 
 ;-------------------------------------------------------------------------------
 ; Android
@@ -202,25 +206,42 @@ include $(BUILD_SHARED_LIBRARY)
 ")
          file)))))
 
-(define (android-generate-project-c-files modules #!key (options #f))
+(define (android-select-and-generate-modules modules
+                                             #!key
+                                             (options #f)
+                                             (select '(playground:)))
   (info "")
   (info "Generate C Code")
   (info "")
-  (gambit-eval-here
-   `(begin
-      (define-cond-expand-feature arm)
-      (include "~~base/prelude#.scm")
-      (for-each
-       (lambda (m)
-         ,(if options
-              `(compile-file-to-target
-                (string-append (%module-path-src m) (%module-filename-scm m))
-                options: ',options
-                output: (string-append ,(lib-directory) (%module-filename-c m)))
-              `(compile-file-to-target
-                (string-append (%module-path-src m) (%module-filename-scm m))
-                output: (string-append ,(lib-directory) (%module-filename-c m)))))
-       ',modules))))
+  (let* ((any-eq? (lambda (k l)
+                    (let recur ((l l))
+                      (cond ((null? l) #f)
+                            ((eq? k (car l)) #t)
+                            (else (recur (cdr l)))))))
+         (modules (if (or (not select) (null? select))
+                      modules
+                      (let recur ((output modules))
+                        (cond ((null? output) '())
+                              ((any-eq? (caar output) select)
+                               (cons (car output) (recur (cdr output))))
+                              (else (recur (cdr output)))))))
+         (output-filenames (map (lambda (m) (string-append (lib-directory) (%module-filename-c m))) modules)))
+    (gambit-eval-here
+     `(begin
+        (define-cond-expand-feature arm)
+        (include "~~base/prelude#.scm")
+        (for-each
+         (lambda (module output-filename)
+           ,(if options
+                `(compile-file-to-target
+                  (string-append (%module-path-src module) (%module-filename-scm module))
+                  options: ',options
+                  output: output-filename)
+                `(compile-file-to-target
+                  (string-append (%module-path-src module) (%module-filename-scm module))
+                  output: output-filename)))
+         ',modules
+         ',output-filenames)))))
 
 (define (android-generate-link-file modules)
   (info "")
@@ -233,6 +254,16 @@ include $(BUILD_SHARED_LIBRARY)
                                                      (%module-filename-c m)))
                                modules)
                         output: ,(string-append (android-build-directory) (android-link-file))))))
+
+;;; Copies passed files to Android build directory
+
+(define (android-install-c-files modules)
+  (for-each
+   (lambda (m) (copy-file
+           (string-append (%module-path-lib m) (%module-filename-c m))
+           (string-append (android-build-directory)
+                          (%module-filename-c m))))
+   modules))
 
 ;;; Calls Sake android task injecting modules and 
 
@@ -247,8 +278,9 @@ include $(BUILD_SHARED_LIBRARY)
                              supplied-modules
                              modules)))
     ;; Generate C from injected modules (only the local ones)
-    (android-generate-project-c-files
+    (android-select-and-generate-modules
      modules
+     select: #f
      options: (if report-scheme '(report) #f))
     ;; Copy generated C from both requested and supplied modules into android build directory
     (for-each
@@ -266,6 +298,12 @@ include $(BUILD_SHARED_LIBRARY)
             (android-generate-manifest-and-properties))
     ;; Call Android build system
     (shell-command (string-append "ant -s " (android-directory)  "build.xml clean debug install"))))
+
+;;; Call Android clean ant task
+
+(define (android-clean)
+  (gambit-eval-here
+   '(shell-command "ant -s android/build.xml clean")))
 
 ;;; Upload file to SD card
 

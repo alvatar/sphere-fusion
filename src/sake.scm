@@ -209,7 +209,7 @@ include $(BUILD_SHARED_LIBRARY)
 (define (android-select-and-generate-modules modules
                                              #!key
                                              (options #f)
-                                             (select '(playground:)))
+                                             (select '(playground)))
   (info "")
   (info "Generate C Code")
   (info "")
@@ -222,7 +222,7 @@ include $(BUILD_SHARED_LIBRARY)
                       modules
                       (let recur ((output modules))
                         (cond ((null? output) '())
-                              ((any-eq? (caar output) select)
+                              ((any-eq? (%module-library (car output)) select)
                                (cons (car output) (recur (cdr output))))
                               (else (recur (cdr output)))))))
          (output-filenames (map (lambda (m) (string-append (lib-directory) (%module-filename-c m))) modules)))

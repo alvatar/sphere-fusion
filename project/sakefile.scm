@@ -8,7 +8,8 @@
 (define project-name (make-parameter "example"))
 
 (define project-modules
-  '(main))
+  '(main
+    nested/test))
 
 ;-------------------------------------------------------------------------------
 ; Tasks

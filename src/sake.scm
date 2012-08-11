@@ -234,11 +234,11 @@ include $(BUILD_SHARED_LIBRARY)
          (lambda (module output-filename)
            ,(if options
                 `(compile-file-to-target
-                  (string-append (%module-path-src module) (%module-filename-scm module))
+                  (string-append (%module-path-src module) (%module-path-scm module))
                   options: ',options
                   output: output-filename)
                 `(compile-file-to-target
-                  (string-append (%module-path-src module) (%module-filename-scm module))
+                  (string-append (%module-path-src module) (%module-path-scm module))
                   output: output-filename)))
          ',modules
          ',output-filenames)))))

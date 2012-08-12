@@ -37,10 +37,8 @@
 
 (define android-base-modules
   (make-parameter '((base: ffi)
-                    (base: repl-server)
-                    (math: math)
-                    (opengl: gl-es)
                     (sdl2: sdl2)
+                    (opengl: gl-es)
                     (playground: driver))))
 
 (define android-link-file
@@ -270,7 +268,7 @@ include $(BUILD_SHARED_LIBRARY)
 (define (android-compile-and-link #!key
                                   (modules '())
                                   (supplied-modules '())
-                                  (report-scheme #f))
+                                  (options #f))
   (unless (file-exists? (playground-setup-directory))
           (error "You need to use (playground-setup) before compiling the project"))
   (when (null? modules) (error "You must supply modules to compile"))
@@ -281,7 +279,7 @@ include $(BUILD_SHARED_LIBRARY)
     (android-select-and-generate-modules
      modules
      select: #f
-     options: (if report-scheme '(report) #f))
+     options: options)
     ;; Copy generated C from both requested and supplied modules into android build directory
     (for-each
      (lambda (m) (copy-file

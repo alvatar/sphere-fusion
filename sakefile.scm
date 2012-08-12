@@ -64,7 +64,9 @@
    ;; Copy generated C files to Android directories
    (android-install-c-files (android-base-modules))))
 
-(define test-app-modules '((playground: app-test)))
+(define test-app-modules
+  '((base: debug/debuggee)
+    (playground: app-test)))
 
 (define-task android:apptest (android:prepare)
   (parameterize
@@ -72,7 +74,7 @@
    (unless (playground-ready?)
            (playground-setup))
    (android-select-and-generate-modules test-app-modules)
-   (android-compile-and-link modules: test-app-modules)))
+   (android-compile-and-link modules: test-app-modules options: '(debug))))
 
 (define-task android:apptest-clean ()
   (delete-file "tmp"))

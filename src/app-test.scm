@@ -1,5 +1,3 @@
-(%include base: repl-server#)
-
 (define num-textures 1)
 (define textures (make-GLuint* 1))
 (define sdl-window #f)
@@ -83,6 +81,9 @@
     (init-gl)
     (setup-viewport screen-width screen-height)
     (setup-opengl-surfaces)
+
+    (remote-debug "192.168.1.128")
+    
     (let* ((event (make-SDL_Event))
            (event* (SDL_Event-pointer event)))
       (call/cc
@@ -92,9 +93,6 @@
              (if (= (SDL_PollEvent event*) 1)
                  (begin (handle-event event k)
                         (event-loop))))
-                                        ;(to-repl win)
-                                        ;(repl-server "playground")
-
            (glClearColor 1.0 (random-real) 0.0 1.0)
            (glClear GL_COLOR_BUFFER_BIT)
            (SDL_GL_SwapWindow win)

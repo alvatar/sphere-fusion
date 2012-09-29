@@ -38,7 +38,6 @@
 (define android-base-modules
   (make-parameter '((base: ffi)
                     (sdl2: sdl2)
-                    ;(opengl: gl-es)
                     (fusion: driver))))
 
 (define android-link-file
@@ -63,7 +62,7 @@
 (define (fusion:update)
   (unless (fusion:precompiled?)
           (fusion:clean)
-          (error "Prior to creating a Fusion project, you need to run android:prepare in Fusion Framework"))
+          (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
   (copy-file (string-append (%library-path 'fusion)
                             (android-directory-suffix)
                             (android-jni-directory-suffix)
@@ -78,7 +77,7 @@
     (fusion:clean)
     (unless (fusion:precompiled?)
             (fusion:clean)
-            (error "Prior to creating a Fusion project, you need to run android:prepare in Fusion Framework"))
+            (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
     (fusion:precompiled?)    
     (make-directory (fusion-setup-directory))
     (make-directory (lib-directory))

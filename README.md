@@ -42,7 +42,7 @@ If you get a segmentation fault with Gambit when loading a module that is precom
 
 ## Important sake tasks
 
-* __clean__: cleans both host and cross-compiled code
-* __run__: runs in host environment
-* __android__: compile and install in Android platform
+* __init__: inits and prepares Fusion environment
+* __test__: compile all tests
+* __clean__: cleans Fusion files and environment
 

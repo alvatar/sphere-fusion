@@ -38,7 +38,7 @@
 (define android-base-modules
   (make-parameter '((base: ffi)
                     (sdl2: sdl2)
-                    (opengl: gl-es)
+                    ;(opengl: gl-es)
                     (fusion: driver))))
 
 (define android-link-file
@@ -46,7 +46,7 @@
 
 ;;; Check whether fusion is precompiled
 
-(define (fusion-precompiled?)
+(define (fusion:precompiled?)
   (file-exists? (string-append (%library-path 'fusion)
                                (android-directory-suffix)
                                (android-jni-directory-suffix)
@@ -54,15 +54,15 @@
 
 ;;; Clean all fusion files for current project
 
-(define (fusion-clean)
+(define (fusion:clean)
   (delete-file (fusion-setup-directory))
   (delete-file (lib-directory)))
 
 ;;; Update fusion generated C files
 
-(define (fusion-update)
-  (unless (fusion-precompiled?)
-          (fusion-clean)
+(define (fusion:update)
+  (unless (fusion:precompiled?)
+          (fusion:clean)
           (error "Prior to creating a Fusion project, you need to run android:prepare in Fusion Framework"))
   (copy-file (string-append (%library-path 'fusion)
                             (android-directory-suffix)
@@ -72,14 +72,14 @@
 
 ;;; Setup fusion files for current project
 
-(define (fusion-setup)
+(define (fusion:setup)
   (let* ((fusion-path (%library-path 'fusion))
          (opath (string-append fusion-path (android-directory-suffix))))
-    (fusion-clean)
-    (unless (fusion-precompiled?)
-            (fusion-clean)
+    (fusion:clean)
+    (unless (fusion:precompiled?)
+            (fusion:clean)
             (error "Prior to creating a Fusion project, you need to run android:prepare in Fusion Framework"))
-    (fusion-precompiled?)    
+    (fusion:precompiled?)    
     (make-directory (fusion-setup-directory))
     (make-directory (lib-directory))
     (make-directory (android-jni-directory))
@@ -98,7 +98,7 @@
 
 ;;; Check whether fusion is ready and setup
 
-(define (fusion-ready?)
+(define (fusion:ready?)
   (file-exists? (fusion-setup-directory)))
 
 ;-------------------------------------------------------------------------------
@@ -107,9 +107,9 @@
 
 ;;; Generate default Manifest and properties file
 
-(define (android-generate-manifest-and-properties #!key
-                                                  (api-level 8)
-                                                  (app-name "Fusion App"))
+(define (fusion:android-generate-manifest-and-properties #!key
+                                                         (api-level 8)
+                                                         (app-name "Fusion App"))
   (info "")
   (info "Generate Manifest and properties files")
   (info "")
@@ -165,11 +165,11 @@
 
 ;;; Generate Android.mk given a set of moduels and optional libraries
 
-(define (android-generate-mk modules #!key (libraries #f))
+(define (fusion:android-generate-mk modules #!key (libraries #f) (features '()))
   (info "")
   (info "Generate Android.mk")
   (info "")
-  (let ((c-files (map %module-filename-c modules)))
+  (let ((c-files (map (lambda (m) (%module-filename-c m features: features)) modules )))
     (call-with-output-file
         (string-append (android-build-directory) "Android.mk")
       (lambda (file)
@@ -204,46 +204,54 @@ include $(BUILD_SHARED_LIBRARY)
 ")
          file)))))
 
-;;; Generate C files, but only those matching "select" argument
+;;; Generate C files
 
-(define (android-select-and-generate-modules modules
-                                             #!key
-                                             (options #f)
-                                             (select '(fusion)))
+(define (fusion:android-generate-modules modules
+                                         #!key
+                                         (options '()))
   (info "")
   (info "Generate C Code")
   (info "")
-  (let* ((any-eq? (lambda (k l)
-                    (let recur ((l l))
-                      (cond ((null? l) #f)
-                            ((eq? k (car l)) #t)
-                            (else (recur (cdr l)))))))
-         (modules (if (or (not select) (null? select))
-                      modules
-                      (let recur ((output modules))
-                        (cond ((null? output) '())
-                              ((any-eq? (%module-library (car output)) select)
-                               (cons (car output) (recur (cdr output))))
-                              (else (recur (cdr output)))))))
-         (output-filenames (map (lambda (m) (string-append (lib-directory) (%module-filename-c m))) modules)))
+  (let ((output-filenames
+         (map (lambda (m)
+                (string-append (lib-directory)
+                               (%module-filename-c m features: (%compiler-options->features options))))
+              modules)))
     (gambit-eval-here
      `(begin
         (define-cond-expand-feature arm)
         (include "~~base/prelude#.scm")
         (for-each
          (lambda (module output-filename)
-           ,(if options
+           ,(if (null? options)
                 `(compile-file-to-target
                   (string-append (%module-path-src module) (%module-filename-scm module))
-                  options: ',options
                   output: output-filename)
                 `(compile-file-to-target
                   (string-append (%module-path-src module) (%module-filename-scm module))
-                  output: output-filename)))
+                  output: output-filename
+                  options: ',options)))
          ',modules
          ',output-filenames)))))
 
-(define (android-generate-link-file modules)
+;;; Select (filter) modules from a list
+
+(define (fusion:select-modules modules #!key (libraries '(fusion)))
+  (let* ((select (if (pair? libraries) libraries (list libraries)))
+         (any-eq? (lambda (k l)
+                    (let recur ((l l))
+                      (cond ((null? l) #f)
+                            ((eq? k (car l)) #t)
+                            (else (recur (cdr l))))))))
+    (let recur ((output modules))
+      (cond ((null? output) '())
+            ((any-eq? (%module-library (car output)) select)
+             (cons (car output) (recur (cdr output))))
+            (else (recur (cdr output)))))))
+
+;;; Generate Gambit link file
+
+(define (fusion:android-generate-link-file modules #!key (features '()))
   (info "")
   (info "Generate Link File")
   (info "")
@@ -251,18 +259,18 @@ include $(BUILD_SHARED_LIBRARY)
    `(begin
       (include "~~base/prelude#.scm")
       (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
-                                                     (%module-filename-c m)))
+                                                     (%module-filename-c m features: features)))
                                modules)
                         output: ,(string-append (android-build-directory) (android-link-file))))))
 
 ;;; Copies passed files to Android build directory
 
-(define (android-install-c-files modules)
+(define (fusion:android-install-c-files modules #!key (features '()))
   (for-each
    (lambda (m) (copy-file
-           (string-append (%module-path-lib m) (%module-filename-c m))
+           (string-append (%module-path-lib m) (%module-filename-c m features: features))
            (string-append (android-build-directory)
-                          (%module-filename-c m))))
+                          (%module-filename-c m features: features))))
    modules))
 
 ;;; Calls Sake android task injecting modules and
@@ -270,47 +278,45 @@ include $(BUILD_SHARED_LIBRARY)
 ;;; provided-modules: modules already generated, to compile and link
 ;;; options: options passed to Gambit compiler
 
-;;; TODO!!! If options contains 'debug bring 
-
-(define (android-compile-and-link #!key
-                                  (modules '())
-                                  (provided-modules '())
-                                  (options #f))
+(define (fusion:android-compile-and-link #!key
+                                         (modules '())
+                                         (provided-modules '())
+                                         (options '()))
   (unless (file-exists? (fusion-setup-directory))
           (error "You need to use (fusion-setup) before compiling the project"))
   (when (null? modules) (error "You must supply modules to compile"))
   (let ((all-modules (append (android-base-modules)
                              provided-modules
                              modules)))
-    ;; Generate C from injected modules (only the local ones)
-    (android-select-and-generate-modules
-     modules
-     select: #f
+    ;; Generate modules (generates C code), selects only those internal to fusion
+    (fusion:android-generate-modules
+     (fusion:select-modules modules libraries: 'fusion)
      options: options)
     ;; Copy generated C from both requested and supplied modules into android build directory
     (for-each
      (lambda (m) (copy-file
-             (string-append (%module-path-lib m) (%module-filename-c m))
+             (string-append (%module-path-lib m)
+                            (%module-filename-c m features: (%compiler-options->features options)))
              (string-append (android-build-directory)
-                            (%module-filename-c m))))
+                            (%module-filename-c m features: (%compiler-options->features options)))))
      (append provided-modules modules))
-    (android-generate-link-file all-modules)
+    (fusion:android-generate-link-file all-modules features: (%compiler-options->features options))
     ;; Generate Android.mk
-    (android-generate-mk all-modules)
+    (fusion:android-generate-mk all-modules features: (%compiler-options->features options))
     ;; If Manifest or properties files are missing, write default ones
     (unless (and (file-exists? (android-manifest-file))
                  (file-exists? (android-project-properties-file)))
-            (android-generate-manifest-and-properties))
+            (fusion:android-generate-manifest-and-properties))
     ;; Call Android build system
     (shell-command (string-append "ant -s " (android-directory)  "build.xml clean debug install"))))
 
 ;;; Call Android clean ant task
 
-(define (android-clean)
+(define (fusion:android-clean)
   (gambit-eval-here
    '(shell-command "ant -s android/build.xml clean")))
 
 ;;; Upload file to SD card
 
-(define (android-upload-file-to-sd relative-path)
+(define (fusion:android-upload-file-to-sd relative-path)
   (error "unimplemented"))

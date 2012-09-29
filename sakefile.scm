@@ -26,16 +26,14 @@
 (define-task host:clean ()
   (make-directory (current-build-directory)))
 
-(define-task run (host:init)
+(define-task host:test-gl (host:init)
   (gambit-eval-here
    `(begin
       (define-cond-expand-feature sdl)
       (include "~~base/prelude#.scm")
       (%load base: ffi)
-      (%load math: math)
-      (%load opengl: gl)
       (%load sdl2: sdl2)
-      (%load main))))
+      (%load test-gl))))
 
 ;-------------------------------------------------------------------------------
 ; Android
@@ -45,45 +43,50 @@
   (parameterize
    ((fusion-setup-directory ""))
    (make-directory (lib-directory))
-   (make-directory (android-build-directory))))
+   (make-directory (android-build-directory))
+   ;; Generate internal Fusion modules
+   (fusion:android-generate-modules
+    (fusion:select-modules (android-base-modules) libraries: 'fusion)
+    options: '(debug))
+   ;; Copy generated C files to Android directories
+   (fusion:android-install-c-files (android-base-modules) features: '(debug))))
 
 (define-task android:clean ()
-  (task-run android:apptest-clean)
   (parameterize
    ((fusion-setup-directory ""))
    (delete-file (android-build-directory))
    (delete-file (lib-directory))
    (delete-file "tmp")
-   (android-clean)))
+   (fusion:android-clean))
+  (task-run android:tests-clean))
 
-(define-task android:prepare (android:init)
-  (parameterize
-   ((fusion-setup-directory ""))
-   ;; Generate C files (only those belonging to fusion library)
-   ;; TODO: Instead of select and generate, do (android-generate-modules (android-fusion-internal-modules)
-   (android-select-and-generate-modules (android-base-modules))
-   ;; Copy generated C files to Android directories
-   (android-install-c-files (android-base-modules))))
+(define-task android:test-gl-es (android:init)
+  (let ((modules '((base: debug/debuggee)
+                   (opengl: gl-es)
+                   (fusion: test-gl-es))))
+    (parameterize
+     ((fusion-setup-directory "tmp/"))
+     (unless (fusion:ready?)
+             (fusion:setup))
+     ;; Compile the app (takes care of generating necessary C files)
+     (fusion:android-compile-and-link modules: modules options: '(debug)))))
 
-(define test-app-modules
-  '((base: debug/debuggee)
-    (fusion: app-test)))
+(define-task android:test (android:test-gl-es)
+  'android:test)
 
-(define-task android:apptest (android:prepare)
-  (parameterize
-   ((fusion-setup-directory "tmp/"))
-   (unless (fusion-ready?)
-           (fusion-setup))
-   ;; HERE: You really need to select? Or at lest you can have a simpler "android-generate-modules" too
-   (android-select-and-generate-modules test-app-modules)
-   (android-compile-and-link modules: test-app-modules options: '(debug))))
-
-(define-task android:apptest-clean ()
+(define-task android:tests-clean ()
   (delete-file "tmp"))
 
 ;-------------------------------------------------------------------------------
 ; Common
 ;-------------------------------------------------------------------------------
 
+(define-task init (android:init)
+  'init)
+
 (define-task clean (android:clean host:clean)
-  (delete-file (current-build-directory)))
+  (delete-file (current-build-directory))
+  'clean)
+
+(define-task test (android:test)
+  'test)

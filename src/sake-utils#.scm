@@ -278,27 +278,25 @@ include $(BUILD_SHARED_LIBRARY)
 ;;; options: options passed to Gambit compiler
 
 (define (fusion:android-compile-and-link #!key
-                                         (modules '())
-                                         (provided-modules '())
+                                         (compile-modules '())
+                                         (import-modules '())
                                          (options '()))
   (unless (file-exists? (fusion-setup-directory))
           (error "You need to use (fusion-setup) before compiling the project"))
-  (when (null? modules) (error "You must supply modules to compile"))
+  ;(when (null? modules) (error "You must supply modules to compile"))
   (let ((all-modules (append (android-base-modules)
-                             provided-modules
-                             modules)))
-    ;; Generate modules (generates C code), selects only those internal to fusion
-    (fusion:android-generate-modules
-     (fusion:select-modules modules libraries: 'fusion)
-     options: options)
-    ;; Copy generated C from both requested and supplied modules into android build directory
+                             import-modules
+                             compile-modules)))
+    ;; Generate modules (generates C code)
+    (fusion:android-generate-modules compile-modules options: options)
+    ;; Copy generated C from both compiled and imported modules into android build directory
     (for-each
      (lambda (m) (copy-file
              (string-append (%module-path-lib m)
                             (%module-filename-c m features: (%compiler-options->features options)))
              (string-append (android-build-directory)
                             (%module-filename-c m features: (%compiler-options->features options)))))
-     (append provided-modules modules))
+     (append import-modules compile-modules))
     (fusion:android-generate-link-file all-modules features: (%compiler-options->features options))
     ;; Generate Android.mk
     (fusion:android-generate-mk all-modules features: (%compiler-options->features options))
@@ -319,3 +317,21 @@ include $(BUILD_SHARED_LIBRARY)
 
 (define (fusion:android-upload-file-to-sd relative-path)
   (error "unimplemented"))
+
+;-------------------------------------------------------------------------------
+; Main tasks
+;-------------------------------------------------------------------------------
+
+(define-task init ()
+  (if (file-exists? (fusion-setup-directory))
+      (error "It appears that the project has been initialized, please execute task \"clean\" prior to initialization")
+      (fusion:setup)))
+
+(define-task update ()
+  (if (file-exists? (fusion-setup-directory))
+      (fusion:update)
+      (fusion:setup)))
+
+(define-task clean ()
+  (fusion:clean)
+  (delete-file (current-build-directory)))

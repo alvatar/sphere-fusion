@@ -1,3 +1,4 @@
+(project-name: "example")
 (paths:
  (base: "/data/projects/scheme-base")
  (opengl: "/data/projects/scheme-opengl")

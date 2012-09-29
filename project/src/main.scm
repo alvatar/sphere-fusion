@@ -93,7 +93,7 @@
                  (begin (handle-event event k)
                         (event-loop))))
                                         ;(to-repl win)
-                                        ;(repl-server "playground")
+                                        ;(repl-server "fusion")
 
            (glClearColor 1.0 (random-real) 0.0 1.0)
            (glClear GL_COLOR_BUFFER_BIT)

@@ -5,5 +5,5 @@
  (opengl: "/data/projects/scheme-opengl")
  (sdl2: "/data/projects/scheme-sdl2")
  (cairo: "/data/projects/scheme-cairo")
- (playground: "/data/projects/scheme-playground"))
+ (fusion: "/data/projects/scheme-fusion"))
 (other: nothing)

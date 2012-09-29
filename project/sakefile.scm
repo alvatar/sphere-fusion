@@ -3,7 +3,7 @@
 ;-------------------------------------------------------------------------------
 
 (include "~~base/prelude#.scm")
-(%include playground: sake-utils#)
+(%include fusion: sake-utils#)
 
 (define project-name (make-parameter "example"))
 
@@ -18,32 +18,32 @@
 (define-task init ()
   (if (file-exists? (playgroynd-setup-directory))
       (error "It appears that the project has been initialized, please execute task \"force-init\" to re-initialize it")
-      (playground-setup)))
+      (fusion-setup)))
 
 (define-task clean ()
-  (playground-clean)
+  (fusion-clean)
   (delete-file (current-build-directory)))
 
 (define-task force-init ()
-  (playground-clean)
-  (playground-setup))
+  (fusion-clean)
+  (fusion-setup))
 
 (define-task run ()
   '())
 
 (define-task update ()
-  (if (file-exists? (playground-setup-directory))
-      (playground-update)
-      (playground-setup)))
+  (if (file-exists? (fusion-setup-directory))
+      (fusion-update)
+      (fusion-setup)))
 
 (define-task android ()
-  (unless (file-exists? (playground-setup-directory))
-          (playground-setup))
+  (unless (file-exists? (fusion-setup-directory))
+          (fusion-setup))
   ;(android-add-asset-to-apk "logo.png")
   ;(android-add-asset-directory-to-apk "images")
   (android-generate-manifest-and-properties
    api-level: 8
-   app-name: "Example Playground App")
+   app-name: "Example Fusion App")
   ;(android-generate-custom-manifest "")
   ;(android-generate-custom-local-properties "")
   ;(android-generate-custom-project-properties "")

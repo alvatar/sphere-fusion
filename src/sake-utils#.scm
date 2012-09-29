@@ -2,8 +2,8 @@
 ; Setup and initialization
 ;-------------------------------------------------------------------------------
 
-(define playground-setup-directory
-  (make-parameter "playground/"))
+(define fusion-setup-directory
+  (make-parameter "fusion/"))
 
 (define lib-directory
   (make-parameter "lib/"))
@@ -15,7 +15,7 @@
   (make-parameter "android/"))
 
 (define (android-directory)
-  (string-append (playground-setup-directory) (android-directory-suffix)))
+  (string-append (fusion-setup-directory) (android-directory-suffix)))
 
 (define android-jni-directory-suffix
   (make-parameter "jni/"))
@@ -39,48 +39,48 @@
   (make-parameter '((base: ffi)
                     (sdl2: sdl2)
                     (opengl: gl-es)
-                    (playground: driver))))
+                    (fusion: driver))))
 
 (define android-link-file
   (make-parameter "linkfile_.c"))
 
-;;; Check whether playground is precompiled
+;;; Check whether fusion is precompiled
 
-(define (playground-precompiled?)
-  (file-exists? (string-append (%library-path 'playground)
+(define (fusion-precompiled?)
+  (file-exists? (string-append (%library-path 'fusion)
                                (android-directory-suffix)
                                (android-jni-directory-suffix)
                                (android-build-directory-suffix))))
 
-;;; Clean all playground files for current project
+;;; Clean all fusion files for current project
 
-(define (playground-clean)
-  (delete-file (playground-setup-directory))
+(define (fusion-clean)
+  (delete-file (fusion-setup-directory))
   (delete-file (lib-directory)))
 
-;;; Update playground generated C files
+;;; Update fusion generated C files
 
-(define (playground-update)
-  (unless (playground-precompiled?)
-          (playground-clean)
-          (error "Prior to creating a Playground project, you need to run android:prepare in Playground Framework"))
-  (copy-file (string-append (%library-path 'playground)
+(define (fusion-update)
+  (unless (fusion-precompiled?)
+          (fusion-clean)
+          (error "Prior to creating a Fusion project, you need to run android:prepare in Fusion Framework"))
+  (copy-file (string-append (%library-path 'fusion)
                             (android-directory-suffix)
                             (android-jni-directory-suffix)
                             (android-build-directory-suffix))
              (android-build-directory-suffix)))
 
-;;; Setup playground files for current project
+;;; Setup fusion files for current project
 
-(define (playground-setup)
-  (let* ((playground-path (%library-path 'playground))
-         (opath (string-append playground-path (android-directory-suffix))))
-    (playground-clean)
-    (unless (playground-precompiled?)
-            (playground-clean)
-            (error "Prior to creating a Playground project, you need to run android:prepare in Playground Framework"))
-    (playground-precompiled?)    
-    (make-directory (playground-setup-directory))
+(define (fusion-setup)
+  (let* ((fusion-path (%library-path 'fusion))
+         (opath (string-append fusion-path (android-directory-suffix))))
+    (fusion-clean)
+    (unless (fusion-precompiled?)
+            (fusion-clean)
+            (error "Prior to creating a Fusion project, you need to run android:prepare in Fusion Framework"))
+    (fusion-precompiled?)    
+    (make-directory (fusion-setup-directory))
     (make-directory (lib-directory))
     (make-directory (android-jni-directory))
     (copy-files (map (lambda (n) (string-append opath n))
@@ -96,10 +96,10 @@
                        "jni/gambit"))
                 (android-jni-directory))))
 
-;;; Check whether playground is ready and setup
+;;; Check whether fusion is ready and setup
 
-(define (playground-ready?)
-  (file-exists? (playground-setup-directory)))
+(define (fusion-ready?)
+  (file-exists? (fusion-setup-directory)))
 
 ;-------------------------------------------------------------------------------
 ; Android
@@ -109,7 +109,7 @@
 
 (define (android-generate-manifest-and-properties #!key
                                                   (api-level 8)
-                                                  (app-name "Playground App"))
+                                                  (app-name "Fusion App"))
   (info "")
   (info "Generate Manifest and properties files")
   (info "")
@@ -209,7 +209,7 @@ include $(BUILD_SHARED_LIBRARY)
 (define (android-select-and-generate-modules modules
                                              #!key
                                              (options #f)
-                                             (select '(playground)))
+                                             (select '(fusion)))
   (info "")
   (info "Generate C Code")
   (info "")
@@ -276,8 +276,8 @@ include $(BUILD_SHARED_LIBRARY)
                                   (modules '())
                                   (provided-modules '())
                                   (options #f))
-  (unless (file-exists? (playground-setup-directory))
-          (error "You need to use (playground-setup) before compiling the project"))
+  (unless (file-exists? (fusion-setup-directory))
+          (error "You need to use (fusion-setup) before compiling the project"))
   (when (null? modules) (error "You must supply modules to compile"))
   (let ((all-modules (append (android-base-modules)
                              provided-modules

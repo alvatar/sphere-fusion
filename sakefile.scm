@@ -5,7 +5,7 @@
 (include "~~base/prelude#.scm")
 (%include sake-utils#)
 
-(define project-name "playground-prototype")
+(define project-name "fusion-prototype")
 
 ;-------------------------------------------------------------------------------
 ; Host OS: Windows, Mac, Linux
@@ -43,14 +43,14 @@
 
 (define-task android:init ()
   (parameterize
-   ((playground-setup-directory ""))
+   ((fusion-setup-directory ""))
    (make-directory (lib-directory))
    (make-directory (android-build-directory))))
 
 (define-task android:clean ()
   (task-run android:apptest-clean)
   (parameterize
-   ((playground-setup-directory ""))
+   ((fusion-setup-directory ""))
    (delete-file (android-build-directory))
    (delete-file (lib-directory))
    (delete-file "tmp")
@@ -58,22 +58,22 @@
 
 (define-task android:prepare (android:init)
   (parameterize
-   ((playground-setup-directory ""))
-   ;; Generate C files (only those belonging to playground library)
-   ;; TODO: Instead of select and generate, do (android-generate-modules (android-playground-internal-modules)
+   ((fusion-setup-directory ""))
+   ;; Generate C files (only those belonging to fusion library)
+   ;; TODO: Instead of select and generate, do (android-generate-modules (android-fusion-internal-modules)
    (android-select-and-generate-modules (android-base-modules))
    ;; Copy generated C files to Android directories
    (android-install-c-files (android-base-modules))))
 
 (define test-app-modules
   '((base: debug/debuggee)
-    (playground: app-test)))
+    (fusion: app-test)))
 
 (define-task android:apptest (android:prepare)
   (parameterize
-   ((playground-setup-directory "tmp/"))
-   (unless (playground-ready?)
-           (playground-setup))
+   ((fusion-setup-directory "tmp/"))
+   (unless (fusion-ready?)
+           (fusion-setup))
    ;; HERE: You really need to select? Or at lest you can have a simpler "android-generate-modules" too
    (android-select-and-generate-modules test-app-modules)
    (android-compile-and-link modules: test-app-modules options: '(debug))))

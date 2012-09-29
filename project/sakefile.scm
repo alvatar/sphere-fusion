@@ -3,7 +3,7 @@
 ;-------------------------------------------------------------------------------
 
 (include "~~base/prelude#.scm")
-(%include playground: sake)
+(%include playground: sake-utils#)
 
 (define project-name (make-parameter "example"))
 
@@ -21,7 +21,8 @@
       (playground-setup)))
 
 (define-task clean ()
-  (playground-clean))
+  (playground-clean)
+  (delete-file (current-build-directory)))
 
 (define-task force-init ()
   (playground-clean)

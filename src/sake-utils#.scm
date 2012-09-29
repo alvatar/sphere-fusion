@@ -204,6 +204,8 @@ include $(BUILD_SHARED_LIBRARY)
 ")
          file)))))
 
+;;; Generate C files, but only those matching "select" argument
+
 (define (android-select-and-generate-modules modules
                                              #!key
                                              (options #f)
@@ -232,11 +234,11 @@ include $(BUILD_SHARED_LIBRARY)
          (lambda (module output-filename)
            ,(if options
                 `(compile-file-to-target
-                  (string-append (%module-path-src module) (%module-path-scm module))
+                  (string-append (%module-path-src module) (%module-filename-scm module))
                   options: ',options
                   output: output-filename)
                 `(compile-file-to-target
-                  (string-append (%module-path-src module) (%module-path-scm module))
+                  (string-append (%module-path-src module) (%module-filename-scm module))
                   output: output-filename)))
          ',modules
          ',output-filenames)))))
@@ -263,17 +265,22 @@ include $(BUILD_SHARED_LIBRARY)
                           (%module-filename-c m))))
    modules))
 
-;;; Calls Sake android task injecting modules and 
+;;; Calls Sake android task injecting modules and
+;;; modules: modules to compile and link
+;;; provided-modules: modules already generated, to compile and link
+;;; options: options passed to Gambit compiler
+
+;;; TODO!!! If options contains 'debug bring 
 
 (define (android-compile-and-link #!key
                                   (modules '())
-                                  (supplied-modules '())
+                                  (provided-modules '())
                                   (options #f))
   (unless (file-exists? (playground-setup-directory))
           (error "You need to use (playground-setup) before compiling the project"))
   (when (null? modules) (error "You must supply modules to compile"))
   (let ((all-modules (append (android-base-modules)
-                             supplied-modules
+                             provided-modules
                              modules)))
     ;; Generate C from injected modules (only the local ones)
     (android-select-and-generate-modules
@@ -286,7 +293,7 @@ include $(BUILD_SHARED_LIBRARY)
              (string-append (%module-path-lib m) (%module-filename-c m))
              (string-append (android-build-directory)
                             (%module-filename-c m))))
-     (append supplied-modules modules))
+     (append provided-modules modules))
     (android-generate-link-file all-modules)
     ;; Generate Android.mk
     (android-generate-mk all-modules)

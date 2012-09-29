@@ -1,10 +1,10 @@
-# Scheme Playground, a C/Scheme library
-Scheme Playground is an open source project in C and Scheme that aims to be useful for people who want to create images, animations, and interactions in several platforms supporting OpenGL graphics.
+# scheme-fusion
+scheme-fusion is an open source project that aims to facilitate multiplatform project building in the Scheme language. It is based on SDL2, and makes it easy to add C-based multiplatform libraries.
 
 ## Installation
 
 ### Dependencies
-This software must be installed in order to use _Scheme Playground_. Follow instructions in their project pages:
+This software must be installed in order to use _scheme-fusion_. Follow instructions in their project pages:
 * __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
 * __Sake__: use this fork: http://github.com/alvatarc/sake
 * __Scheme Base__: http://github.com/alvatarc/scheme-base

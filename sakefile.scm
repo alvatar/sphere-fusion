@@ -3,7 +3,7 @@
 ;-------------------------------------------------------------------------------
 
 (include "~~base/prelude#.scm")
-(%include sake)
+(%include sake-utils#)
 
 (define project-name "playground-prototype")
 
@@ -14,9 +14,9 @@
 (define project-modules
   '("driver" "main"))
 
-(define includes "-I/usr/include/cairo -I/usr/include/freetype2 -I/usr/local/include/SDL2 -I/usr/include/GL")
+(define include-flags "-I/usr/include/cairo -I/usr/include/freetype2 -I/usr/local/include/SDL2 -I/usr/include/GL")
 
-(define libraries "-lcairo -lGL -L/usr/local/lib/ -lSDL2")
+(define library-flags "-lcairo -lGL -L/usr/local/lib/ -lSDL2")
 
 (define flags "-w")
 
@@ -60,6 +60,7 @@
   (parameterize
    ((playground-setup-directory ""))
    ;; Generate C files (only those belonging to playground library)
+   ;; TODO: Instead of select and generate, do (android-generate-modules (android-playground-internal-modules)
    (android-select-and-generate-modules (android-base-modules))
    ;; Copy generated C files to Android directories
    (android-install-c-files (android-base-modules))))
@@ -73,6 +74,7 @@
    ((playground-setup-directory "tmp/"))
    (unless (playground-ready?)
            (playground-setup))
+   ;; HERE: You really need to select? Or at lest you can have a simpler "android-generate-modules" too
    (android-select-and-generate-modules test-app-modules)
    (android-compile-and-link modules: test-app-modules options: '(debug))))
 

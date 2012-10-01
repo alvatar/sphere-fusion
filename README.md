@@ -5,9 +5,9 @@ Scheme-fusion is an open source project that aims to facilitate multiplatform pr
 
 ### Dependencies
 This software must be installed in order to use _scheme-fusion_. Follow instructions in their project pages:
-* __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
-* __Sake__: use this repo: http://github.com/alvatarc/scheme-sake
-* __Scheme Base__: http://github.com/alvatarc/scheme-base
+1) __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
+2) __Sake__: use this repo: http://github.com/alvatarc/scheme-sake
+3) __Scheme Base__: http://github.com/alvatarc/scheme-base
 
 ### Android support
 

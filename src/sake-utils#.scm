@@ -218,8 +218,9 @@ include $(BUILD_SHARED_LIBRARY)
               modules)))
     (gambit-eval-here
      `(begin
-        (define-cond-expand-feature arm)
         (include "~~base/prelude#.scm")
+        (define-cond-expand-feature mobile)
+        (define-cond-expand-feature android)
         (for-each
          (lambda (module output-filename)
            ,(if (null? options)

@@ -17,7 +17,7 @@
   (glMatrixMode GL_PROJECTION)
   (glLoadIdentity)
   (cond-expand
-   (arm
+   (mobile
     (glOrthof 0.0 (exact->inexact width)
               0.0 (exact->inexact height)
               1.0 -1.0))

@@ -40,6 +40,11 @@
                     (sdl2: sdl2)
                     (fusion: driver))))
 
+(define android-base-debug-modules
+  (make-parameter '((base: ffi version: (debug))
+                    (sdl2: sdl2 version: (debug))
+                    (fusion: driver version: (debug)))))
+
 (define android-link-file
   (make-parameter "linkfile_.c"))
 
@@ -164,11 +169,11 @@
 
 ;;; Generate Android.mk given a set of moduels and optional libraries
 
-(define (fusion:android-generate-mk modules #!key (libraries #f) (features '()))
+(define (fusion:android-generate-mk modules #!key (libraries #f))
   (info "")
   (info "Generate Android.mk")
   (info "")
-  (let ((c-files (map (lambda (m) (%module-filename-c m features: features)) modules )))
+  (let ((c-files (map (lambda (m) (%module-filename-c m)) modules)))
     (call-with-output-file
         (string-append (android-build-directory) "Android.mk")
       (lambda (file)
@@ -207,14 +212,15 @@ include $(BUILD_SHARED_LIBRARY)
 
 (define (fusion:android-generate-modules modules
                                          #!key
-                                         (options '()))
+                                         (version '())
+                                         (compiler-options '()))
   (info "")
   (info "Generate C Code")
   (info "")
   (let ((output-filenames
          (map (lambda (m)
                 (string-append (lib-directory)
-                               (%module-filename-c m features: (%compiler-options->features options))))
+                               (%module-filename-c m version: version)))
               modules)))
     (gambit-eval-here
      `(begin
@@ -223,14 +229,10 @@ include $(BUILD_SHARED_LIBRARY)
         (define-cond-expand-feature android)
         (for-each
          (lambda (module output-filename)
-           ,(if (null? options)
-                `(compile-file-to-target
-                  (string-append (%module-path-src module) (%module-filename-scm module))
-                  output: output-filename)
-                `(compile-file-to-target
-                  (string-append (%module-path-src module) (%module-filename-scm module))
-                  output: output-filename
-                  options: ',options)))
+           (compile-file-to-target
+            (string-append (%module-path-src module) (%module-filename-scm module))
+            output: output-filename
+            options: ',compiler-options))
          ',modules
          ',output-filenames)))))
 
@@ -251,7 +253,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 ;;; Generate Gambit link file
 
-(define (fusion:android-generate-link-file modules #!key (features '()))
+(define (fusion:android-generate-link-file modules)
   (info "")
   (info "Generate Link File")
   (info "")
@@ -259,48 +261,53 @@ include $(BUILD_SHARED_LIBRARY)
    `(begin
       (include "~~base/prelude#.scm")
       (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
-                                                     (%module-filename-c m features: features)))
+                                                     (%module-filename-c m)))
                                modules)
                         output: ,(string-append (android-build-directory) (android-link-file))))))
 
 ;;; Copies passed files to Android build directory
 
-(define (fusion:android-install-c-files modules #!key (features '()))
+;;; TODO: What about installing ALL versions from a module???
+
+(define (fusion:android-install-c-files modules)
   (for-each
    (lambda (m) (copy-file
-           (string-append (%module-path-lib m) (%module-filename-c m features: features))
+           (string-append (%module-path-lib m) (%module-filename-c m))
            (string-append (android-build-directory)
-                          (%module-filename-c m features: features))))
+                          (%module-filename-c m))))
    modules))
 
 ;;; Calls Sake android task injecting modules and
 ;;; modules: modules to compile and link
 ;;; provided-modules: modules already generated, to compile and link
-;;; options: options passed to Gambit compiler
+;;; compiler-options: options for Gambit compiler
 
 (define (fusion:android-compile-and-link #!key
                                          (compile-modules '())
-                                         (import-modules '())
-                                         (options '()))
+                                         (compiler-options '())
+                                         (import-modules '()))
   (unless (file-exists? (fusion-setup-directory))
           (error "You need to use (fusion-setup) before compiling the project"))
-  ;(when (null? modules) (error "You must supply modules to compile"))
-  (let ((all-modules (append (android-base-modules)
-                             import-modules
-                             compile-modules)))
+  (let* ((android-modules (if (memq 'debug compiler-options)
+                              (android-base-debug-modules)
+                              (android-base-modules)))
+         (all-modules (append android-modules
+                              import-modules
+                              compile-modules)))
     ;; Generate modules (generates C code)
-    (fusion:android-generate-modules compile-modules options: options)
+    (fusion:android-generate-modules compile-modules
+                                     compiler-options: compiler-options)
     ;; Copy generated C from both compiled and imported modules into android build directory
     (for-each
      (lambda (m) (copy-file
              (string-append (%module-path-lib m)
-                            (%module-filename-c m features: (%compiler-options->features options)))
+                            (%module-filename-c m))
              (string-append (android-build-directory)
-                            (%module-filename-c m features: (%compiler-options->features options)))))
+                            (%module-filename-c m))))
      (append import-modules compile-modules))
-    (fusion:android-generate-link-file all-modules features: (%compiler-options->features options))
+    (fusion:android-generate-link-file all-modules)
     ;; Generate Android.mk
-    (fusion:android-generate-mk all-modules features: (%compiler-options->features options))
+    (fusion:android-generate-mk all-modules)
     ;; If Manifest or properties files are missing, write default ones
     (unless (and (file-exists? (android-manifest-file))
                  (file-exists? (android-project-properties-file)))

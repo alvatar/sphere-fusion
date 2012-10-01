@@ -48,11 +48,10 @@
    (fusion:android-generate-modules
     (fusion:select-modules (android-base-modules) libraries: 'fusion))
    (fusion:android-generate-modules
-    (fusion:select-modules (android-base-modules) libraries: 'fusion)
-    options: '(debug))
-   ;; Copy generated C files to Android directories
+    (fusion:select-modules (android-base-debug-modules) libraries: 'fusion))
+   ;; Copy all versions of the libraries generated C files to Android directories
    (fusion:android-install-c-files (android-base-modules))
-   (fusion:android-install-c-files (android-base-modules) features: '(debug))))
+   (fusion:android-install-c-files (android-base-debug-modules))))
 
 (define-task android:clean ()
   (parameterize
@@ -65,8 +64,8 @@
 
 (define-task android:test-gl-es (android:init)
   (let ((modules '(test-gl-es))
-        (provided-modules '((base: debug/debuggee)
-                            (opengl: gl-es))))
+        (provided-modules '((base: debug/debuggee version: (debug))
+                            (opengl: gl-es version: (debug)))))
     (parameterize
      ((fusion-setup-directory "tmp/"))
      (unless (fusion:ready?)
@@ -74,7 +73,7 @@
      ;; Compile the app (takes care of generating necessary C files)
      (fusion:android-compile-and-link compile-modules: modules
                                       import-modules: provided-modules
-                                      options: '(debug)))))
+                                      compiler-options: '(debug)))))
 
 (define-task android:test (android:test-gl-es)
   'android:test)

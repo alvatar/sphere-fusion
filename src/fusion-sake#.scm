@@ -209,28 +209,31 @@ include $(BUILD_SHARED_SPHERE)
 (define (fusion:android-generate-modules modules
                                          #!key
                                          (version '())
-                                         (compiler-options '()))
+                                         (compiler-options '())
+                                         (verbose #f))
   (info "")
   (info "Generate C Code")
   (info "")
-  (let ((output-filenames
-         (map (lambda (m)
-                (string-append (default-lib-directory)
-                               (%module-filename-c m version: version)))
-              modules)))
-    (gambit-eval-here
-     `(begin
-        (include "~~spheres/prelude#.scm")
-        (define-cond-expand-feature mobile)
-        (define-cond-expand-feature android)
-        (for-each
-         (lambda (module output-filename)
-           (compile-file-to-target
-            (string-append (%module-path-src module) (%module-filename-scm module))
-            output: output-filename
-            options: ',compiler-options))
-         ',modules
-         ',output-filenames)))))
+  (let* ((output-filenames
+          (map (lambda (m)
+                 (string-append (default-lib-directory)
+                                (%module-filename-c m version: version)))
+               modules))
+         (code `(begin
+                  (include "~~spheres/prelude#.scm")
+                  (define-cond-expand-feature mobile)
+                  (define-cond-expand-feature android)
+                  (for-each
+                   (lambda (module output-filename)
+                     (compile-file-to-target
+                      (string-append (%module-path-src module) (%module-filename-scm module))
+                      output: output-filename
+                      options: ',compiler-options))
+                   ',modules
+                   ',output-filenames))))
+    (if verbose
+        (pp code))
+    (gambit-eval-here code)))
 
 ;;; Select (filter) modules from a list
 
@@ -249,17 +252,20 @@ include $(BUILD_SHARED_SPHERE)
 
 ;;; Generate Gambit link file
 
-(define (fusion:android-generate-link-file modules)
+(define (fusion:android-generate-link-file modules #!key (verbose #f))
   (info "")
   (info "Generate Link File")
   (info "")
-  (gambit-eval-here
-   `(begin
-      (include "~~spheres/prelude#.scm")
-      (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
-                                                     (%module-filename-c m)))
-                               modules)
-                        output: ,(string-append (android-build-directory) (android-link-file))))))
+  (let ((code
+         `(begin
+            (include "~~spheres/prelude#.scm")
+            (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
+                                                           (%module-filename-c m)))
+                                     modules)
+                              output: ,(string-append (android-build-directory) (android-link-file))))))
+    (if verbose
+        (pp code))
+    (gambit-eval-here code)))
 
 ;;; Copies passed files to Android build directory
 
@@ -301,7 +307,7 @@ include $(BUILD_SHARED_SPHERE)
              (string-append (android-build-directory)
                             (%module-filename-c m))))
      (append import-modules compile-modules))
-    (fusion:android-generate-link-file all-modules)
+    (fusion:android-generate-link-file all-modules verbose: #t)
     ;; Generate Android.mk
     (fusion:android-generate-mk all-modules)
     ;; If Manifest or properties files are missing, write default ones

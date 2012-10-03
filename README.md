@@ -31,12 +31,13 @@ Then, adapt the following:
     make
 
 It will break when trying to compile gsi, but you don't need it. You only need libgambc.a
+Copy lib/libgambc.a include/gambit.h include/gambit-not{gambit-version}.h to android/jni/gambit
 
 ### Android troubleshooting
 
 For every specific version of Gambit:
 * Recompile Gambit for the host
-* Recompile Gambit for the Android architecture, and copy the libgambc.a generated file to jni/ext
+* Recompile Gambit for the Android architecture, and copy the libgambc.a generated file to jni/gambit
 
 If you get a segmentation fault with Gambit when loading a module that is precompiled, probably it was compiled with a different Gambit version
 

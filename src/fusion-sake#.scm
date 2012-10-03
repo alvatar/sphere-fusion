@@ -1,15 +1,11 @@
+(%include sake: utils#)
+
 ;-------------------------------------------------------------------------------
 ; Setup and initialization
 ;-------------------------------------------------------------------------------
 
 (define fusion-setup-directory
   (make-parameter "fusion/"))
-
-(define lib-directory
-  (make-parameter "lib/"))
-
-(define src-directory
-  (make-parameter "src/"))
 
 (define android-directory-suffix
   (make-parameter "android/"))
@@ -51,7 +47,7 @@
 ;;; Check whether fusion is precompiled
 
 (define (fusion:precompiled?)
-  (file-exists? (string-append (%library-path 'fusion)
+  (file-exists? (string-append (%sphere-path 'fusion)
                                (android-directory-suffix)
                                (android-jni-directory-suffix)
                                (android-build-directory-suffix))))
@@ -60,7 +56,7 @@
 
 (define (fusion:clean)
   (delete-file (fusion-setup-directory))
-  (delete-file (lib-directory)))
+  (delete-file (default-lib-directory)))
 
 ;;; Update fusion generated C files
 
@@ -68,7 +64,7 @@
   (unless (fusion:precompiled?)
           (fusion:clean)
           (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
-  (copy-file (string-append (%library-path 'fusion)
+  (copy-file (string-append (%sphere-path 'fusion)
                             (android-directory-suffix)
                             (android-jni-directory-suffix)
                             (android-build-directory-suffix))
@@ -77,7 +73,7 @@
 ;;; Setup fusion files for current project
 
 (define (fusion:setup)
-  (let* ((fusion-path (%library-path 'fusion))
+  (let* ((fusion-path (%sphere-path 'fusion))
          (opath (string-append fusion-path (android-directory-suffix))))
     (fusion:clean)
     (unless (fusion:precompiled?)
@@ -85,7 +81,7 @@
             (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
     (fusion:precompiled?)    
     (make-directory (fusion-setup-directory))
-    (make-directory (lib-directory))
+    (make-directory (default-lib-directory))
     (make-directory (android-jni-directory))
     (copy-files (map (lambda (n) (string-append opath n))
                      '("build.xml"
@@ -167,9 +163,9 @@
        (string-append "target=android-" (number->string api-level) "\n")
        file))))
 
-;;; Generate Android.mk given a set of moduels and optional libraries
+;;; Generate Android.mk given a set of moduels and optional spheres
 
-(define (fusion:android-generate-mk modules #!key (libraries #f))
+(define (fusion:android-generate-mk modules #!key (spheres #f))
   (info "")
   (info "Generate Android.mk")
   (info "")
@@ -202,9 +198,9 @@ LOCAL_SRC_FILES := \\
 LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include
 LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
 LOCAL_SHARED_LIBRARIES := "
-          (unless libraries "SDL2")
+          (unless spheres "SDL2")
           "
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_SHARED_SPHERE)
 ")
          file)))))
 
@@ -219,12 +215,12 @@ include $(BUILD_SHARED_LIBRARY)
   (info "")
   (let ((output-filenames
          (map (lambda (m)
-                (string-append (lib-directory)
+                (string-append (default-lib-directory)
                                (%module-filename-c m version: version)))
               modules)))
     (gambit-eval-here
      `(begin
-        (include "~~base/prelude#.scm")
+        (include "~~spheres/prelude#.scm")
         (define-cond-expand-feature mobile)
         (define-cond-expand-feature android)
         (for-each
@@ -238,8 +234,8 @@ include $(BUILD_SHARED_LIBRARY)
 
 ;;; Select (filter) modules from a list
 
-(define (fusion:select-modules modules #!key (libraries '(fusion)))
-  (let* ((select (if (pair? libraries) libraries (list libraries)))
+(define (fusion:select-modules modules #!key (spheres '(fusion)))
+  (let* ((select (if (pair? spheres) spheres (list spheres)))
          (any-eq? (lambda (k l)
                     (let recur ((l l))
                       (cond ((null? l) #f)
@@ -247,7 +243,7 @@ include $(BUILD_SHARED_LIBRARY)
                             (else (recur (cdr l))))))))
     (let recur ((output modules))
       (cond ((null? output) '())
-            ((any-eq? (%module-library (car output)) select)
+            ((any-eq? (%module-sphere (car output)) select)
              (cons (car output) (recur (cdr output))))
             (else (recur (cdr output)))))))
 
@@ -259,7 +255,7 @@ include $(BUILD_SHARED_LIBRARY)
   (info "")
   (gambit-eval-here
    `(begin
-      (include "~~base/prelude#.scm")
+      (include "~~spheres/prelude#.scm")
       (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
                                                      (%module-filename-c m)))
                                modules)

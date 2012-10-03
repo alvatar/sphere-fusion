@@ -200,7 +200,7 @@ LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
 LOCAL_SHARED_LIBRARIES := "
           (unless spheres "SDL2")
           "
-include $(BUILD_SHARED_SPHERE)
+include $(BUILD_SHARED_LIBRARY)
 ")
          file)))))
 
@@ -307,7 +307,7 @@ include $(BUILD_SHARED_SPHERE)
              (string-append (android-build-directory)
                             (%module-filename-c m))))
      (append import-modules compile-modules))
-    (fusion:android-generate-link-file all-modules verbose: #t)
+    (fusion:android-generate-link-file all-modules)
     ;; Generate Android.mk
     (fusion:android-generate-mk all-modules)
     ;; If Manifest or properties files are missing, write default ones

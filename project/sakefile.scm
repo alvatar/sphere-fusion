@@ -2,8 +2,8 @@
 ; Configuration
 ;-------------------------------------------------------------------------------
 
-(include "~~base/prelude#.scm")
-(%include fusion: sake-utils#)
+(include "~~spheres/prelude#.scm")
+(%include fusion: fusion-sake#)
 
 ;-------------------------------------------------------------------------------
 ; Tasks

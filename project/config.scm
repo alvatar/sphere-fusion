@@ -1,4 +1,4 @@
-(project-name: "example")
+(sphere: "example")
 (paths:
  (base: "/data/projects/scheme-base")
  (opengl: "/data/projects/scheme-opengl")

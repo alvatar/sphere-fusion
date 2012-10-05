@@ -7,6 +7,9 @@
 (define fusion-setup-directory
   (make-parameter "fusion/"))
 
+(define fusion-addons-directory
+  (make-parameter "addons/"))
+
 (define android-directory-suffix
   (make-parameter "android/"))
 
@@ -45,7 +48,6 @@
   (make-parameter "linkfile_.c"))
 
 ;;; Check whether fusion is precompiled
-
 (define (fusion:precompiled?)
   (file-exists? (string-append (%sphere-path 'fusion)
                                (android-directory-suffix)
@@ -53,13 +55,11 @@
                                (android-build-directory-suffix))))
 
 ;;; Clean all fusion files for current project
-
 (define (fusion:clean)
   (delete-file (fusion-setup-directory))
   (delete-file (default-lib-directory)))
 
 ;;; Update fusion generated C files
-
 (define (fusion:update)
   (unless (fusion:precompiled?)
           (fusion:clean)
@@ -70,43 +70,42 @@
                             (android-build-directory-suffix))
              (android-build-directory-suffix)))
 
-;;; Setup fusion files for current project
-
-(define (fusion:setup)
-  (let* ((fusion-path (%sphere-path 'fusion))
-         (opath (string-append fusion-path (android-directory-suffix))))
-    (fusion:clean)
-    (unless (fusion:precompiled?)
-            (fusion:clean)
-            (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
-    (fusion:precompiled?)    
-    (make-directory (fusion-setup-directory))
-    (make-directory (default-lib-directory))
-    (make-directory (android-jni-directory))
-    (copy-files (map (lambda (n) (string-append opath n))
-                     '("build.xml"
-                       "local.properties"
-                       "proguard-project.txt"
-                       "src"))
-                (android-directory))
-    (copy-files (map (lambda (n) (string-append opath n))
-                     '("jni/Android.mk"
-                       "jni/SDL"
-                       "jni/build"
-                       "jni/gambit"))
-                (android-jni-directory))))
-
-;;; Check whether fusion is ready and setup
-
+;;; Check whether fusion is ready and setup for project usage
 (define (fusion:ready?)
   (file-exists? (fusion-setup-directory)))
+
+;;; Setup fusion files for current project
+(define (fusion:setup #!key (force #f))
+  (when (or force
+            (not (fusion:ready?)))
+        (let* ((fusion-path (%sphere-path 'fusion))
+               (opath (string-append fusion-path (android-directory-suffix))))
+          (fusion:clean)
+          (unless (fusion:precompiled?)
+                  (fusion:clean)
+                  (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
+          (fusion:precompiled?)    
+          (make-directory (fusion-setup-directory))
+          (make-directory (default-lib-directory))
+          (make-directory (android-jni-directory))
+          (copy-files (map (lambda (n) (string-append opath n))
+                           '("build.xml"
+                             "local.properties"
+                             "proguard-project.txt"
+                             "src"))
+                      (android-directory))
+          (copy-files (map (lambda (n) (string-append opath n))
+                           '("jni/Android.mk"
+                             "jni/SDL"
+                             "jni/build"
+                             "jni/gambit"))
+                      (android-jni-directory)))))
 
 ;-------------------------------------------------------------------------------
 ; Android
 ;-------------------------------------------------------------------------------
 
 ;;; Generate default Manifest and properties file
-
 (define (fusion:android-generate-manifest-and-properties #!key
                                                          (api-level 8)
                                                          (app-name "Fusion App"))
@@ -163,9 +162,47 @@
        (string-append "target=android-" (number->string api-level) "\n")
        file))))
 
-;;; Generate Android.mk given a set of moduels and optional spheres
+;;; Global describing necessary info for importing addons
+(define *fusion:addons-info*
+  '((pixman ((directories: ("pixman/" "pixman-extra/"))
+             (dependencies: ())
+             (c-flags: "")
+             (ld-flags: "")
+             (shared-libraries: "")))
+    (cairo ((directories: ("cairo/" "cairo-extra/"))
+            (dependencies: (pixman))
+            (c-flags: "")
+            (ld-flags: "")
+            (shared-libraries: "")))))
 
-(define (fusion:android-generate-mk modules #!key (spheres #f))
+;;; Build the system with this addon
+(define (fusion:android-import-addon libs #!key (fresh-copy #f))
+  (let ((fusion-path (%sphere-path 'fusion)))
+    (for-each
+     (lambda (lib)
+       (let ((lib-info (assq lib *fusion:addons-info*)))
+         (assure lib-info "WTF?!")
+         (let ((lib-info-list (cadr lib-info)))
+           (for-each (lambda (dep) (fusion:android-import-addon (list dep)))
+                     (cadr (assq dependencies: lib-info-list)))
+           (for-each (lambda (dir)
+                       (let ((destination-path (string-append (android-jni-directory) dir)))
+                         (when (or fresh-copy
+                                   (not (file-exists? destination-path)))
+                               (make-directory destination-path)
+                               (copy-files (fileset dir: (string-append fusion-path
+                                                                        (fusion-addons-directory)
+                                                                        dir)
+                                                    recursive: #f)
+                                           destination-path))))
+                     (cadr (assq directories: lib-info-list))))))
+     libs)))
+
+;;; Global holding the list of imported addons
+(define *fusion:imported-native-libraries* '())
+
+;;; Generate Android.mk given a set of moduels and optional spheres
+(define (fusion:android-generate-mk modules)
   (info "")
   (info "Generate Android.mk")
   (info "")
@@ -198,14 +235,13 @@ LOCAL_SRC_FILES := \\
 LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include
 LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
 LOCAL_SHARED_LIBRARIES := "
-          (unless spheres "SDL2")
+          (apply string-append (cons "SDL2" *fusion:native-libraries*))
           "
 include $(BUILD_SHARED_LIBRARY)
 ")
          file)))))
 
 ;;; Generate C files
-
 (define (fusion:android-generate-modules modules
                                          #!key
                                          (version '())
@@ -236,7 +272,6 @@ include $(BUILD_SHARED_LIBRARY)
     (gambit-eval-here code)))
 
 ;;; Select (filter) modules from a list
-
 (define (fusion:select-modules modules #!key (spheres '(fusion)))
   (let* ((select (if (pair? spheres) spheres (list spheres)))
          (any-eq? (lambda (k l)
@@ -251,7 +286,6 @@ include $(BUILD_SHARED_LIBRARY)
             (else (recur (cdr output)))))))
 
 ;;; Generate Gambit link file
-
 (define (fusion:android-generate-link-file modules #!key (verbose #f))
   (info "")
   (info "Generate Link File")
@@ -268,9 +302,7 @@ include $(BUILD_SHARED_LIBRARY)
     (gambit-eval-here code)))
 
 ;;; Copies passed files to Android build directory
-
 ;;; TODO: What about installing ALL versions from a module???
-
 (define (fusion:android-install-c-files modules)
   (for-each
    (lambda (m) (copy-file
@@ -283,7 +315,6 @@ include $(BUILD_SHARED_LIBRARY)
 ;;; modules: modules to compile and link
 ;;; provided-modules: modules already generated, to compile and link
 ;;; compiler-options: options for Gambit compiler
-
 (define (fusion:android-compile-and-link #!key
                                          (compile-modules '())
                                          (compiler-options '())
@@ -318,13 +349,11 @@ include $(BUILD_SHARED_LIBRARY)
     (shell-command (string-append "ant -s " (android-directory)  "build.xml clean debug install"))))
 
 ;;; Call Android clean ant task
-
 (define (fusion:android-clean)
   (gambit-eval-here
    '(shell-command "ant -s android/build.xml clean")))
 
 ;;; Upload file to SD card
-
 (define (fusion:android-upload-file-to-sd relative-path)
   (error "unimplemented"))
 

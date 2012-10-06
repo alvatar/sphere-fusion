@@ -164,16 +164,23 @@
 
 ;;; Global describing necessary info for importing addons
 (define *fusion:addons-info*
-  '((pixman ((directories: ("pixman/" "pixman-extra/"))
+  '((gl ((directories: (""))
+         (dependencies: ())
+         (c-flags: "")
+         (ld-flags: "-lGLESv1_CM")))
+    (pixman ((directories: ("pixman/" "pixman-extra/"))
              (dependencies: ())
              (c-flags: "")
              (ld-flags: "")
-             (shared-libraries: "")))
+             (android-static-libraries: "libpixman")
+             (android-shared-libraries: "pixman pixman-extra")))
     (cairo ((directories: ("cairo/" "cairo-extra/"))
             (dependencies: (pixman))
             (c-flags: "")
             (ld-flags: "")
-            (shared-libraries: "")))))
+            (android-c-includes: "cairo/src cairo-extra")
+            (android-static-libraries: "libcairo")
+            (android-shared-libraries: "cairo cairo-extra")))))
 
 ;;; Build the system with this addon
 (define (fusion:android-import-addon libs #!key (fresh-copy #f))
@@ -181,32 +188,52 @@
     (for-each
      (lambda (lib)
        (let ((lib-info (assq lib *fusion:addons-info*)))
-         (assure lib-info "WTF?!")
-         (let ((lib-info-list (cadr lib-info)))
-           (for-each (lambda (dep) (fusion:android-import-addon (list dep)))
-                     (cadr (assq dependencies: lib-info-list)))
-           (for-each (lambda (dir)
-                       (let ((destination-path (string-append (android-jni-directory) dir)))
-                         (when (or fresh-copy
-                                   (not (file-exists? destination-path)))
-                               (make-directory destination-path)
-                               (copy-files (fileset dir: (string-append fusion-path
-                                                                        (fusion-addons-directory)
-                                                                        dir)
-                                                    recursive: #f)
-                                           destination-path))))
-                     (cadr (assq directories: lib-info-list))))))
+         (assure lib-info (error "internal error in fusion:android-import-addon"))
+         ;; Check whether it has been imported
+         (let ((lib-id (car lib-info)))
+           (unless (memq lib-id *fusion:imported-addons*)
+                   (set! *fusion:imported-addons*
+                         (cons lib-id *fusion:imported-addons*))
+                   (let ((lib-info-list (cadr lib-info)))
+                     (for-each (lambda (dep) (fusion:android-import-addon (list dep)))
+                               (uif (assq dependencies: lib-info-list)
+                                    (cadr ?it)
+                                    '()))
+                     (for-each (lambda (dir)
+                                 (let ((destination-path (string-append (android-jni-directory) dir)))
+                                   (when (or fresh-copy
+                                             (not (file-exists? destination-path)))
+                                         (make-directory destination-path)
+                                         (copy-files (fileset dir: (string-append fusion-path
+                                                                                  (fusion-addons-directory)
+                                                                                  dir)
+                                                              recursive: #f)
+                                                     destination-path))))
+                               (cadr (assq directories: lib-info-list))))))))
      libs)))
 
 ;;; Global holding the list of imported addons
-(define *fusion:imported-native-libraries* '())
+(define *fusion:imported-addons* '())
 
 ;;; Generate Android.mk given a set of moduels and optional spheres
 (define (fusion:android-generate-mk modules)
   (info "")
   (info "Generate Android.mk")
   (info "")
-  (let ((c-files (map (lambda (m) (%module-filename-c m)) modules)))
+  (let ((c-files (map (lambda (m) (%module-filename-c m)) modules))
+        (produce-addon-string
+         (lambda (key)
+           (let ((produced-string
+                  (apply string-append (map (lambda (lib)
+                                              (uif (assq key
+                                                         (cadr
+                                                          (assq lib *fusion:addons-info*)))
+                                                   (string-append " " (cadr ?it))
+                                                   ""))
+                                            *fusion:imported-addons*))))
+             (if (string? produced-string)
+                 produced-string
+                 "")))))
     (call-with-output-file
         (string-append (android-build-directory) "Android.mk")
       (lambda (file)
@@ -232,10 +259,22 @@ LOCAL_SRC_FILES := \\
 "))))
            (android-link-file))
           "
-LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include
-LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -lGLESv1_CM -L./gambit -lgambc
-LOCAL_SHARED_LIBRARIES := "
-          (apply string-append (cons "SDL2" *fusion:native-libraries*))
+LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include"
+          (produce-addon-string c-flags:)
+          "
+LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -L./gambit -lgambc"
+          (produce-addon-string ld-flags:)
+          "
+"
+          (let ((static-libs (produce-addon-string android-c-includes:)))
+            (if (string-null? static-libs)
+                ""
+                (string-append "LOCAL_C_INCLUDES :=  $(LOCAL_PATH)/../SDL/include " static-libs "\n")))
+          (let ((static-libs (produce-addon-string android-static-libraries:)))
+            (if (string-null? static-libs)
+                ""
+                (string-append "LOCAL_STATIC_LIBRARIES :=" static-libs "\n")))
+          (string-append "LOCAL_SHARED_LIBRARIES := SDL2" (produce-addon-string android-shared-libraries:))
           "
 include $(BUILD_SHARED_LIBRARY)
 ")

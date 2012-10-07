@@ -172,7 +172,8 @@
              (dependencies: ())
              (c-flags: "")
              (ld-flags: "")
-             (android-static-libraries: "libpixman")
+             (android-c-includes: "pixman pixman-extra")
+             (android-static-libraries: "libpixman cpufeatures")
              (android-shared-libraries: "pixman pixman-extra")))
     (cairo ((directories: ("cairo/" "cairo-extra/"))
             (dependencies: (pixman))
@@ -224,13 +225,14 @@
         (produce-addon-string
          (lambda (key)
            (let ((produced-string
-                  (apply string-append (map (lambda (lib)
-                                              (uif (assq key
-                                                         (cadr
-                                                          (assq lib *fusion:addons-info*)))
-                                                   (string-append " " (cadr ?it))
-                                                   ""))
-                                            *fusion:imported-addons*))))
+                  (apply string-append (reverse
+                                        (map (lambda (lib)
+                                               (uif (assq key
+                                                          (cadr
+                                                           (assq lib *fusion:addons-info*)))
+                                                    (string-append " " (cadr ?it))
+                                                    ""))
+                                             *fusion:imported-addons*)))))
              (if (string? produced-string)
                  produced-string
                  "")))))
@@ -258,11 +260,12 @@ LOCAL_SRC_FILES := \\
                                        " \\
 "))))
            (android-link-file))
+          ;; IMPORTANT: using -w, -Wno-write-strings doesn't work in all cases
           "
-LOCAL_CFLAGS += -O2 -fno-short-enums -Wno-missing-field-initializers -I./gambit -I. -I./SDL/include"
+LOCAL_CFLAGS += -O2 -fno-short-enums -w -I./gambit -I. -I./SDL/include"
           (produce-addon-string c-flags:)
           "
-LOCAL_LDLIBS := -ldl -fno-short-enums -lc -llog -L./gambit -lgambc"
+LOCAL_LDLIBS := -ldl -lc -lm -llog -fno-short-enums -L./gambit -lgambc"
           (produce-addon-string ld-flags:)
           "
 "

@@ -388,6 +388,10 @@ include $(BUILD_SHARED_LIBRARY)
     ;; Call Android build system
     (shell-command (string-append "ant -s " (android-directory)  "build.xml clean debug install"))))
 
+;;; Run the Android app in the device
+(define (fusion:android-run-app)
+  (shell-command "adb shell am start -n org.libsdl.app/.SDLActivity"))
+
 ;;; Call Android clean ant task
 (define (fusion:android-clean)
   (unless (= 0 (gambit-eval-here

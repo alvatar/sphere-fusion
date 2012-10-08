@@ -63,7 +63,7 @@
 (define (fusion:update)
   (unless (fusion:precompiled?)
           (fusion:clean)
-          (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
+          (error "Prior to creating a Fusion project, you need to run 'sake compile' in Fusion Framework"))
   (copy-files (list (string-append (%sphere-path 'fusion) (android-directory-suffix) "jni/build"))
               (android-jni-directory)))
 
@@ -80,7 +80,7 @@
           (fusion:clean)
           (unless (fusion:precompiled?)
                   (fusion:clean)
-                  (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
+                  (error "Prior to creating a Fusion project, you need to run 'sake compile' in Fusion Framework"))
           (make-directory (fusion-setup-directory))
           (make-directory (default-lib-directory))
           (make-directory (android-jni-directory))

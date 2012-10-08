@@ -5,9 +5,9 @@ Scheme-fusion is an open source project that aims to facilitate multiplatform pr
 
 ### Dependencies
 This software must be installed in order to use _scheme-fusion_. Follow instructions in their project pages:
-1) __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
-2) __Sake__: use this repo: http://github.com/alvatarc/scheme-sake
-3) __Scheme Base__: http://github.com/alvatarc/scheme-base
+1. __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
+2. __Sake__: use this repo: http://github.com/alvatarc/scheme-sake
+3. __Scheme Base__: http://github.com/alvatarc/scheme-base
 
 ### Android support
 
@@ -30,8 +30,7 @@ Then, adapt the following:
     ./configure --enable-single-host --prefix=$PREFIX --host=arm-eabi CC=arm-linux-androideabi-gcc CPPFLAGS="-DANDROID -I$ANDROID_NDK_DIR/platforms/android-14/arch-arm/usr/include/ -fno-short-enums" CFLAGS="-DANDROID -fno-short-enums -I$ANDROID_NDK_DIR/platforms/android-14/arch-arm/usr/include/ -nostdlib" LDFLAGS="-Wl,-rpath-link=$ANDROID_NDK_DIR/platforms/android-14/arch-arm/usr/lib/ -L$ANDROID_NDK_DIR/platforms/android-14/arch-arm/usr/lib" LIBS="-lc -ldl"
     make
 
-It will break when trying to compile gsi, but you don't need it. You only need libgambc.a
-Copy lib/libgambc.a include/gambit.h include/gambit-not{gambit-version}.h to android/jni/gambit
+Important: It will break when trying to compile gsi, but you don't need it. You only need _libgambc.a_, copy it from lib/libgambc.a include/gambit.h include/gambit-not{gambit-version}.h to android/jni/gambit
 
 ### Android troubleshooting
 
@@ -43,7 +42,6 @@ If you get a segmentation fault with Gambit when loading a module that is precom
 
 ## Important sake tasks
 
-* __init__: inits and prepares Fusion environment
-* __test__: compile all tests
+* __compile__: compiles and prepares Fusion environment
 * __clean__: cleans Fusion files and environment
 

@@ -15,7 +15,7 @@
 ; Android
 ;-------------------------------------------------------------------------------
 
-(define-task android:init ()
+(define-task android:compile ()
   (parameterize
    ((fusion-setup-directory ""))
    (make-directory (default-lib-directory))
@@ -39,7 +39,7 @@
 ; Common
 ;-------------------------------------------------------------------------------
 
-(define-task init (android:init)
+(define-task compile (android:compile)
   'init)
 
 (define-task clean (android:clean)

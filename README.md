@@ -1,13 +1,19 @@
 # Scheme-fusion
 Scheme-fusion is an open source project that aims to facilitate multiplatform project building in the Scheme language. It is based on SDL2, and makes it easy to add C-based multiplatform libraries.
 
-## Installation
+## Sake tasks
+
+* __compile__: compiles and prepares Fusion environment
+* __clean__: cleans Fusion files and environment
+
+## Setup
 
 ### Dependencies
 This software must be installed in order to use _scheme-fusion_. Follow instructions in their project pages:
-1. __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
-2. __Sake__: use this repo: http://github.com/alvatarc/scheme-sake
-3. __Scheme Base__: http://github.com/alvatarc/scheme-base
+
+1.  __Gambit Scheme compiler__: best to use latest version: http://www.iro.umontreal.ca/~gambit See Android Support for notes on compiling Gambit for Android
+2.  __Sake__: use this repo: http://github.com/alvatarc/scheme-sake
+3.  __Scheme Base__: http://github.com/alvatarc/scheme-base
 
 ### Android support
 
@@ -32,16 +38,11 @@ Then, adapt the following:
 
 Important: It will break when trying to compile gsi, but you don't need it. You only need _libgambc.a_, copy it from lib/libgambc.a include/gambit.h include/gambit-not{gambit-version}.h to android/jni/gambit
 
-### Android troubleshooting
+### Updating Gambit System
 
-For every specific version of Gambit:
+Follow this process:
 * Recompile Gambit for the host
-* Recompile Gambit for the Android architecture, and copy the libgambc.a generated file to jni/gambit
+* Recompile Gambit for the Android architecture, and copy the libgambc.a generated file to android/jni/gambit
 
 If you get a segmentation fault with Gambit when loading a module that is precompiled, probably it was compiled with a different Gambit version
-
-## Important sake tasks
-
-* __compile__: compiles and prepares Fusion environment
-* __clean__: cleans Fusion files and environment
 

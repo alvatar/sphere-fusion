@@ -14,10 +14,8 @@
   (fusion:android-generate-manifest-and-properties
    api-level: 8
    app-name: "Example Fusion App")
-  (fusion:android-import-addon '(cairo))
   (fusion:android-compile-and-link
-   compile-modules: '(main)
-   import-modules: '((cairo: cairo))))
+   compile-modules: '(main)))
 
 (define-task all (android)
   'all)

@@ -59,16 +59,13 @@
   (delete-file (fusion-setup-directory))
   (delete-file (default-lib-directory)))
 
-;;; Update fusion generated C files
+;;; Update fusion-generated C files
 (define (fusion:update)
   (unless (fusion:precompiled?)
           (fusion:clean)
           (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
-  (copy-file (string-append (%sphere-path 'fusion)
-                            (android-directory-suffix)
-                            (android-jni-directory-suffix)
-                            (android-build-directory-suffix))
-             (android-build-directory-suffix)))
+  (copy-files (list (string-append (%sphere-path 'fusion) (android-directory-suffix) "jni/build"))
+              (android-jni-directory)))
 
 ;;; Check whether fusion is ready and setup for project usage
 (define (fusion:ready?)
@@ -84,7 +81,6 @@
           (unless (fusion:precompiled?)
                   (fusion:clean)
                   (error "Prior to creating a Fusion project, you need to run 'sake init' in Fusion Framework"))
-          (fusion:precompiled?)    
           (make-directory (fusion-setup-directory))
           (make-directory (default-lib-directory))
           (make-directory (android-jni-directory))
@@ -290,7 +286,7 @@ include $(BUILD_SHARED_LIBRARY)
                                          (compiler-options '())
                                          (verbose #f))
   (info "")
-  (info "Generate C Code")
+  (info "Generate C code")
   (info "")
   (let* ((output-filenames
           (map (lambda (m)
@@ -311,7 +307,8 @@ include $(BUILD_SHARED_LIBRARY)
                    ',output-filenames))))
     (if verbose
         (pp code))
-    (gambit-eval-here code)))
+    (unless (= 0 (gambit-eval-here code))
+            (error "error generating Android C code"))))
 
 ;;; Select (filter) modules from a list
 (define (fusion:select-modules modules #!key (spheres '(fusion)))
@@ -330,7 +327,7 @@ include $(BUILD_SHARED_LIBRARY)
 ;;; Generate Gambit link file
 (define (fusion:android-generate-link-file modules #!key (verbose #f))
   (info "")
-  (info "Generate Link File")
+  (info "Generate link file")
   (info "")
   (let ((code
          `(begin
@@ -341,7 +338,8 @@ include $(BUILD_SHARED_LIBRARY)
                               output: ,(string-append (android-build-directory) (android-link-file))))))
     (if verbose
         (pp code))
-    (gambit-eval-here code)))
+    (unless (= 0 (gambit-eval-here code))
+            (error "error generating link file"))))
 
 ;;; Copies passed files to Android build directory
 ;;; TODO: What about installing ALL versions from a module???
@@ -392,8 +390,9 @@ include $(BUILD_SHARED_LIBRARY)
 
 ;;; Call Android clean ant task
 (define (fusion:android-clean)
-  (gambit-eval-here
-   '(shell-command "ant -s android/build.xml clean")))
+  (unless (= 0 (gambit-eval-here
+                '(shell-command "ant -s android/build.xml clean")))
+          (error "error in \"ant clean\" command")))
 
 ;;; Upload file to SD card
 (define (fusion:android-upload-file-to-sd relative-path)

@@ -1,47 +1,10 @@
-;;; logging
-
-(define android:log-info
-  (c-lambda (char-string char-string)
-            void
-   "__android_log_print(ANDROID_LOG_INFO,___arg1,___arg2);"))
-
-(define android:log
-  (c-lambda (int char-string char-string)
-            void
-            "__android_log_print"))
-
-;;; On events code generation
-
-(define-macro
-  (generate-callback suffix params c-name)
-  (let* ((global (string->symbol (string-append "*android:" (symbol->string suffix) "*")))
-         (exec-name (string->symbol (string-append "android:" (symbol->string suffix))))
-         (setter-name (string->symbol (string-append "android:" (symbol->string suffix) "-set!"))))
-    `(begin
-       (define (,global) (lambda () #f))
-       (c-define (,exec-name) ,params void ,c-name ""
-                 (,global))
-       (define (,setter-name f)
-         (set! ,global f)))))
-
-;(generate-callback on-create () "gambit_on_create")
-;(generate-callback on-pause () "gambit_on_pause")
-;(generate-callback on-resume () "gambit_on_resume")
-;(generate-callback on-destroy () "gambit_on_destroy")
-;(generate-callback on-surface-created () "gambit_surface_created")
-;(generate-callback on-surface-destroy () "gambit_surface_destroy")
-;(generate-callback on-surface-changed () "gambit_surface_changed")
-;(generate-callback on-touch-down () "gambit_on_touch_down")
-;(generate-callback on-touch-up () "gambit_on_touch_up")
-;(generate-callback on-touch-move () "gambit_on_touch_move")
-
 ;;; Main driver code
 
 (c-declare #<<end-of-c-declare
 
 #include <android/log.h>
 
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "SDL", __VA_ARGS__))
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "scheme-fusion", __VA_ARGS__))
 
 #define LINKER ____20_linkfile__
 
@@ -86,12 +49,9 @@ void SDL_main() {
     ___setup(&setup_params);
     // <-- END GAMBIT INITIALIZATION
 
-
-    LOGI("+++++++++++++++++++++++++++++++++++++++++++");
-    int i = 0;
-    for(i=0; i<20; i++) {
-        LOGI("Fib(): %i\n", scheme_main());
-    }
+    LOGI("Initializing Scheme Environment");
+    LOGI("Scheme environment output: %i\n", scheme_main());
+    LOGI("Finalizing Scheme Environment");
 }
 end-of-c-declare
 )

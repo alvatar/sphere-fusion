@@ -46,5 +46,5 @@
   (delete-file (current-build-directory))
   'clean)
 
-(define-task all (init)
+(define-task all (compile)
   'all)

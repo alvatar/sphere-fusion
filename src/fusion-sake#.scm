@@ -34,15 +34,11 @@
 (define (android-project-properties-file)
   (string-append (android-directory) "project.properties"))
 
-(define android-base-modules
-  (make-parameter '((base: ffi)
-                    (sdl2: sdl2)
-                    (fusion: driver))))
+;; (define android-driver-module
+;;   (make-parameter '(fusion: driver)))
 
-(define android-base-debug-modules
-  (make-parameter '((base: ffi version: (debug))
-                    (sdl2: sdl2 version: (debug))
-                    (fusion: driver version: (debug)))))
+;; (define android-driver-debug-module
+;;   (make-parameter '(fusion: driver version: (debug))))
 
 (define android-link-file
   (make-parameter "linkfile_.c"))
@@ -310,20 +306,6 @@ include $(BUILD_SHARED_LIBRARY)
     (unless (= 0 (gambit-eval-here code))
             (error "error generating Android C code"))))
 
-;;; Select (filter) modules from a list
-(define (fusion:select-modules modules #!key (spheres '(fusion)))
-  (let* ((select (if (pair? spheres) spheres (list spheres)))
-         (any-eq? (lambda (k l)
-                    (let recur ((l l))
-                      (cond ((null? l) #f)
-                            ((eq? k (car l)) #t)
-                            (else (recur (cdr l))))))))
-    (let recur ((output modules))
-      (cond ((null? output) '())
-            ((any-eq? (%module-sphere (car output)) select)
-             (cons (car output) (recur (cdr output))))
-            (else (recur (cdr output)))))))
-
 ;;; Generate Gambit link file
 (define (fusion:android-generate-link-file modules #!key (verbose #f))
   (info "")
@@ -342,8 +324,7 @@ include $(BUILD_SHARED_LIBRARY)
             (error "error generating link file"))))
 
 ;;; Copies passed files to Android build directory
-;;; TODO: What about installing ALL versions from a module???
-(define (fusion:android-install-c-files modules)
+(define (fusion:android-install-modules-c-files modules)
   (for-each
    (lambda (m) (copy-file
            (string-append (%module-path-lib m) (%module-filename-c m))
@@ -352,21 +333,26 @@ include $(BUILD_SHARED_LIBRARY)
    modules))
 
 ;;; Calls Sake android task injecting modules and
-;;; modules: modules to compile and link
-;;; provided-modules: modules already generated, to compile and link
+;;; compile-modules: modules to compile and link
 ;;; compiler-options: options for Gambit compiler
-(define (fusion:android-compile-and-link #!key
-                                         (compile-modules '())
+;;; import-modules: modules already generated to be linked as well
+(define (fusion:android-compile-and-link compile-modules
+                                         #!key
                                          (compiler-options '())
                                          (import-modules '()))
   (unless (file-exists? (fusion-setup-directory))
           (error "You need to use (fusion-setup) before compiling the project"))
-  (let* ((android-modules (if (memq 'debug compiler-options)
-                              (android-base-debug-modules)
-                              (android-base-modules)))
-         (all-modules (append android-modules
-                              import-modules
-                              compile-modules)))
+  (let* ((core-modules (if (memq 'debug compiler-options)
+                           (%module-deep-dependencies-to-load '(fusion: driver version: (debug)))
+                           (%module-deep-dependencies-to-load '(fusion: driver))))
+         (all-modules (%merge-module-lists
+                       (%merge-module-lists core-modules import-modules)
+                       ;; FIX: ideally this should fold with %module-deep-dependencies, instead of applying append
+                       ;; but any duplicate is cleaned up in next call to %module-deep-dependencies,
+                       ;; and order shouldn't be a problem
+                       (apply append (map %module-deep-dependencies-to-load compile-modules)))))
+    
+    (%module-deep-dependencies-to-load '(fusion: driver version: (debug)))
     ;; Generate modules (generates C code)
     (fusion:android-generate-modules compile-modules
                                      compiler-options: compiler-options)
@@ -377,7 +363,7 @@ include $(BUILD_SHARED_LIBRARY)
                             (%module-filename-c m))
              (string-append (android-build-directory)
                             (%module-filename-c m))))
-     (append import-modules compile-modules))
+     all-modules)
     (fusion:android-generate-link-file all-modules)
     ;; Generate Android.mk
     (fusion:android-generate-mk all-modules)

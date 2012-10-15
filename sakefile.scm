@@ -22,12 +22,16 @@
    (make-directory (android-build-directory))
    ;; Generate internal Fusion modules
    (fusion:android-generate-modules
-    (fusion:select-modules (android-base-modules) spheres: 'fusion))
+    '((fusion: driver)))
    (fusion:android-generate-modules
-    (fusion:select-modules (android-base-debug-modules) spheres: 'fusion))
+    '((fusion: driver version: (debug))))
    ;; Copy all versions of the spheres' generated C files to Android directories
-   (fusion:android-install-c-files (android-base-modules))
-   (fusion:android-install-c-files (android-base-debug-modules))))
+   (fusion:android-install-modules-c-files
+    (%module-deep-dependencies-to-load
+     '(fusion: driver)))
+   (fusion:android-install-modules-c-files
+    (%module-deep-dependencies-to-load
+     '(fusion: driver version: (debug))))))
 
 (define-task android:clean ()
   (parameterize

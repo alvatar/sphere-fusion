@@ -15,10 +15,8 @@
    api-level: 8
    app-name: "Example Fusion App")
   (fusion:android-import-addon '(gl))
-  (fusion:android-compile-and-link
-   compile-modules: '(main)
-   import-modules: '((opengl: gl-es version: (debug)))
-   compiler-options: '(debug)))
+  (fusion:android-compile-and-link '((test-gl: main version: (debug)))
+                                   compiler-options: '(debug)))
 
 (define-task all (android)
   'all)

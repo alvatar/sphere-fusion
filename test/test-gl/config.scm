@@ -7,7 +7,7 @@
    (opengl: gl-es#))
   (load
    (opengl: gl-es)))
- ((test-gl: main version: (debug))
+ ((= main version: (debug))
   (include
    (opengl: gl-es#))
   (load

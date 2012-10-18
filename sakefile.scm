@@ -26,12 +26,13 @@
    (fusion:android-generate-modules
     '((fusion: driver version: (debug))))
    ;; Copy all versions of the spheres' generated C files to Android directories
-   (fusion:android-install-modules-c-files
-    (%module-deep-dependencies-to-load
-     '(fusion: driver)))
-   (fusion:android-install-modules-c-files
-    (%module-deep-dependencies-to-load
-     '(fusion: driver version: (debug))))))
+   ; (fusion:android-install-modules-c-files
+   ;  (%module-deep-dependencies-to-load
+   ;   '(fusion: driver)))
+   ; (fusion:android-install-modules-c-files
+   ;  (%module-deep-dependencies-to-load
+   ;   '(fusion: driver version: (debug))))
+   ))
 
 (define-task android:clean ()
   (parameterize

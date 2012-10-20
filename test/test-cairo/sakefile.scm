@@ -18,5 +18,11 @@
   (fusion:android-compile-and-link '(main))
   (fusion:android-run-app))
 
-(define-task all (android)
+(define-task desktop:run ()
+  (fusion:desktop-run-interpreted 'main))
+
+(define-task desktop:compile ()
+  (fusion:desktop-compile-and-link '(main)))
+
+(define-task all (desktop:compile android)
   'all)

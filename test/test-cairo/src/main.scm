@@ -1,8 +1,8 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Test for Cairo on SDL Surface
 
-(%include base: ffi#)
-(%include sdl2: sdl2#)
+;(%include base: ffi#)
+;(%include sdl2: sdl2#)
 
 (define (critical-error . msgs)
   (apply SDL_LogError msgs)

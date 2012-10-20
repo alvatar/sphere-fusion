@@ -398,14 +398,10 @@ include $(BUILD_SHARED_LIBRARY)
           ((equal? "Darwin" uname) 'osx)
           (else (error "fusion:current-desltop-platform -> can't detect current platform")))))
 
-;; (call-with-output-file "test.scm"
-;;     (lambda (f)
-;;       (for-each (lambda (m) (pp `(%load ,m) f))
-;;                 (%module-deep-dependencies-to-load main-module))))
 (define (fusion:desktop-run-interpreted main-module)
-  (gambit-eval-here `((%load (sdl2: sdl2))
-                      (%load ,main-module)
-                      (main))))
+  (gambit-eval-here '(%load (sdl2: sdl2))
+                    `(%load ,main-module)
+                    '(main)))
 
 ;-------------------------------------------------------------------------------
 ; Main tasks

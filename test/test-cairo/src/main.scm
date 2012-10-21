@@ -1,8 +1,8 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Test for Cairo on SDL Surface
 
-;(%include base: ffi#)
-;(%include sdl2: sdl2#)
+(%include base: ffi#)
+(%include sdl2: sdl2#)
 
 (define (critical-error . msgs)
   (apply SDL_LogError msgs)
@@ -29,26 +29,11 @@
                    (cairo:destroy c)))
       (values cairo cairo-surface buffer))))
 
-(define (draw cr)
-  (cairo:arc cr 80.0 80.0 76.8 0.0 3.14)
-  (cairo:clip cr)
-  (cairo:new-path cr)
-  (cairo:rectangle cr 0.0 0.0 256.0 256.0)
-  (cairo:fill cr)
-  (cairo:set-source-rgb cr 0.0 1.0 0.0)
-  (cairo:move-to cr 0.0 0.0)
-  (cairo:line-to cr 256.0 256.0)
-  (cairo:move-to cr 256.0 0.0)
-  (cairo:line-to cr 0.0 256.0)
-  (cairo:set-line-width cr 10.0)
-  (cairo:stroke cr)
-  (cairo:restore cr))
-
 (define (handle-event event)
   (let ((type (SDL_Event-type event)))
     (cond
      ((= type SDL_QUIT)
-      (exit 0))
+      'exit)
      ((= type SDL_MOUSEBUTTONDOWN)
       (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Button down"))
      ((= type SDL_KEYDOWN)
@@ -57,10 +42,9 @@
 	     (key (SDL_Keysym-sym
 		   (SDL_KeyboardEvent-keysym kevt))))
 	(cond ((= key SDLK_ESCAPE)
-	       (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
-	       (error "TODO"))
+	       'exit)
               (else
-	       (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " key))))))
+	       (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
      ((= type SDL_WINDOWEVENT)
       (let* ((wevt (SDL_Event-window event))
              (event (SDL_WindowEvent-event wevt)))
@@ -72,6 +56,16 @@
      ((= type SDL_FINGERDOWN)
       (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "FINGER DOWN!")))))
 
+(define draw
+  (let ((posx 180.0))
+    (lambda (cr)
+      (cairo:set-source-rgba cr 1.0 1.0 1.0 1.0)
+      (cairo:rectangle cr 0.0 0.0 (exact->inexact 1280) (exact->inexact 727))
+      (cairo:fill cr)
+      (cairo:arc cr posx 180.0 150.0 0.0 6.28)
+      (cairo:set-source-rgb cr 0.5 0.5 0.0)
+      (cairo:fill cr)
+      (set! posx (+ 1.0 posx)))))
 
 (define (main)
   (if (< (SDL_Init SDL_INIT_VIDEO) 0)
@@ -84,42 +78,50 @@
                  SDL_WINDOWPOS_CENTERED
                  screen-width
                  screen-height
-                 (bitwise-ior SDL_WINDOW_FULLSCREEN
-                              SDL_WINDOW_BORDERLESS)))
-           (check (if (not win) (critical-error "Unable to create render window"(SDL_GetError)))))
+                 (cond-expand
+                  (mobile (bitwise-ior SDL_WINDOW_FULLSCREEN SDL_WINDOW_BORDERLESS))
+                  (else 0))))
+           (check (if (not win) (critical-error "Unable to create render window" (SDL_GetError)))))
       (SDL_Log (string-append "Successfully created SDL render surface: "
                               (object->string
                                (pointer->SDL_Surface (SDL_GetWindowSurface win)))))
       (SDL_LogSetAllPriority SDL_LOG_PRIORITY_DEBUG)
 
-      ;(remote-debug "192.168.1.128")
+      (cond-expand
+       (mobile (remote-debug "192.168.1.128"))
+       (else (void)))
       
       ;; FIX: Handle device rotation and surface destruction
-      (receive
-       (cairo cairo-surface cairo-surface-data)
-       (create-cairo-surface (SDL_Surface-pixels
-                              (pointer->SDL_Surface
-                               (SDL_GetWindowSurface win)))
-                             screen-width
-                             screen-height
-                             4)
-       (let* ((event (make-SDL_Event))
-              (event* (SDL_Event-pointer event)))
-         (SDL_Log "Cairo surface successfully created")
-         (SDL_Log "SDL_CreatedRGBSurface works well (apparently)")
-         (let main-loop ()
-           (let event-loop ()
-             (if (= (SDL_PollEvent event*) 1)
-                 (begin (handle-event event)
-                        (event-loop))))
-           (draw cairo)
-           (SDL_Log "Cairo draws!")
-           
-           (if (not (= 0 (SDL_UpdateWindowSurface win)))
-               (SDL_LogError SDL_LOG_CATEGORY_APPLICATION (SDL_GetError)))
-           (SDL_Delay 100)
-           
-           (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "LOOPING...")
-           (main-loop))
-         (SDL_DestroyWindow win)
-         (SDL_Quit))))))
+      (call/cc
+       (lambda (cairo-creation)
+         (receive
+          (cairo cairo-surface cairo-surface-data)
+          (create-cairo-surface (SDL_Surface-pixels
+                                 (pointer->SDL_Surface
+                                  (SDL_GetWindowSurface win)))
+                                screen-width
+                                screen-height
+                                4)
+          (let* ((event (make-SDL_Event))
+                 (event* (SDL_Event-pointer event)))
+            (SDL_Log "Cairo surface successfully created")
+            (SDL_Log "SDL_CreatedRGBSurface works well (apparently)")
+            (call/cc
+             (lambda (exit)
+               (let main-loop ()
+                 (let event-loop ()
+                   (when (= (SDL_PollEvent event*) 1)
+                         (case (handle-event event)
+                           ((exit)
+                            (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
+                            (SDL_DestroyWindow win)
+                            (SDL_Quit)
+                            (exit)))
+                         (event-loop)))
+                 (draw cairo)
+                 (SDL_Log "Cairo draws")
+                 (unless (= 0 (SDL_UpdateWindowSurface win))
+                         (critical-error "Unable to update Window Surface" (SDL_GetError)))
+                 (SDL_Delay 40)
+                 (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Looping...")
+                 (main-loop)))))))))))

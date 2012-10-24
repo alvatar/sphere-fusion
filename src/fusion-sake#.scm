@@ -111,32 +111,23 @@
        (string-append
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>
 <manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"
-      package=\"org.libsdl.app\"
-  android:versionCode=\"1\"
-  android:versionName=\"1.0\"
-  android:installLocation=\"preferExternal\">
+          package=\"org.libsdl.app\"
+          android:versionCode=\"1\"
+          android:versionName=\"1.0\"
+          android:installLocation=\"preferExternal\">
   <!-- android:debuggable=\"true\" -->
-
-  <uses-sdk android:minSdkVersion=\""
-        (number->string api-level)
-        "\" />
+  <uses-sdk android:minSdkVersion=\"" (number->string api-level) "\" />
   <uses-permission android:name=\"android.permission.WRITE_EXTERNALSTORAGE\" />
   <uses-permission android:name=\"android.permission.WAKE_LOCK\" />
   <uses-permission android:name=\"android.permission.INTERNET\" />
 
-  <application android:label=\""
-        app-name
-        "\">
-    <!-- Our activity is the built-in NativeActivity framework class. 
-         This will take care of integrating with our NDK code. -->
+  <application android:label=\"" app-name "\">
     <activity android:name=\"SDLActivity\"
-      android:label=\""
-        app-name
-        "\"
-      android:configChanges=\"orientation|keyboardHidden\">
-      <!-- Tell NativeActivity the name of or .so -->
+              android:label=\"" app-name "\"
+              android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\"
+              android:configChanges=\"orientation|keyboardHidden\">
       <meta-data android:name=\"android.app.lib_name\"
-        android:value=\"native-activity\" />
+                 android:value=\"native-activity\" />
       <intent-filter>
         <action android:name=\"android.intent.action.MAIN\" />
         <category android:name=\"android.intent.category.LAUNCHER\" />

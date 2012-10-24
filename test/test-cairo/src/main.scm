@@ -49,6 +49,12 @@
       (let* ((wevt (SDL_Event-window event))
              (event (SDL_WindowEvent-event wevt)))
         (cond
+         ((= event SDL_WINDOWEVENT_SIZE_CHANGED)
+          (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Window Size Changed")
+          'size-changed)
+         ((= event SDL_WINDOWEVENT_RESIZED)
+          (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Window Resized")
+          'resized)
          ((= event SDL_WINDOWEVENT_MINIMIZED)
           (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Window Minimized"))
          ((= event SDL_WINDOWEVENT_RESTORED)
@@ -87,41 +93,44 @@
                                (pointer->SDL_Surface (SDL_GetWindowSurface win)))))
       (SDL_LogSetAllPriority SDL_LOG_PRIORITY_DEBUG)
 
+      #;
       (cond-expand
-       (mobile (remote-debug "192.168.1.128"))
-       (else (void)))
+      (mobile (remote-debug "192.168.1.128"))
+      (else (void)))
       
-      ;; FIX: Handle device rotation and surface destruction
-      (call/cc
-       (lambda (cairo-creation)
-         (receive
-          (cairo cairo-surface cairo-surface-data)
-          (create-cairo-surface (SDL_Surface-pixels
-                                 (pointer->SDL_Surface
-                                  (SDL_GetWindowSurface win)))
-                                screen-width
-                                screen-height
-                                4)
-          (let* ((event (make-SDL_Event))
-                 (event* (SDL_Event-pointer event)))
-            (SDL_Log "Cairo surface successfully created")
-            (SDL_Log "SDL_CreatedRGBSurface works well (apparently)")
-            (call/cc
-             (lambda (exit)
-               (let main-loop ()
-                 (let event-loop ()
-                   (when (= (SDL_PollEvent event*) 1)
-                         (case (handle-event event)
-                           ((exit)
-                            (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
-                            (SDL_DestroyWindow win)
-                            (SDL_Quit)
-                            (exit)))
-                         (event-loop)))
-                 (draw cairo)
-                 (SDL_Log "Cairo draws")
-                 (unless (= 0 (SDL_UpdateWindowSurface win))
-                         (critical-error "Unable to update Window Surface" (SDL_GetError)))
-                 (SDL_Delay 40)
-                 (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Looping...")
-                 (main-loop)))))))))))
+      ;; FIX: Handle device rotation and surface destruction. Seems to be a SDL issue
+      (receive
+       (cairo cairo-surface cairo-surface-data)
+       (create-cairo-surface (SDL_Surface-pixels
+                              (pointer->SDL_Surface
+                               (SDL_GetWindowSurface win)))
+                             screen-width
+                             screen-height
+                             4)
+       (let* ((event (make-SDL_Event))
+              (event* (SDL_Event-pointer event)))
+         (SDL_Log "Cairo surface successfully created")
+         (SDL_Log "SDL_CreatedRGBSurface works well (apparently)")
+         (call/cc
+          (lambda (exit)
+            (let main-loop ()
+              (let event-loop ()
+                (when (= (SDL_PollEvent event*) 1)
+                      (case (handle-event event)
+                        ((exit)
+                         (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
+                         (SDL_DestroyWindow win)
+                         (SDL_Quit)
+                         (exit))
+                        ((size-changed)
+                         (SDL_Log "SIZE CHANGED"))
+                        ((resized)
+                         (SDL_Log "RESIZED")))
+                      (event-loop)))
+              (draw cairo)
+                                        ;(SDL_Log "Cairo draws")
+              (unless (= 0 (SDL_UpdateWindowSurface win))
+                      (critical-error "Unable to update Window Surface" (SDL_GetError)))
+              (SDL_Delay 40)
+              (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Looping...")
+              (main-loop)))))))))

@@ -6,15 +6,11 @@
   (include
    (cairo: cairo#))
   (load
-   (sdl2: sdl2)
-   (cairo: cairo)
-   (opengl: gl-es)
+   (fusion: gl-cairo)
    (base: debug/debuggee)))
- ((test-cairo: main version: (debug))
+ ((= main version: (debug))
   (include
    (cairo: cairo#))
   (load
-   (sdl2: sdl2 version: (debug))
-   (cairo: cairo version: (debug))
-   (opengl: gl-es)
-   (base: debug/debuggee version: (debug)))))
+   (base: debug/debuggee version: (debug))
+   (fusion: gl-cairo version: (debug)))))

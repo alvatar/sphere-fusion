@@ -22,9 +22,11 @@
    (make-directory (android-build-directory))
    ;; Generate internal Fusion modules
    (fusion:android-generate-modules
-    '((fusion: driver)))
+    '((fusion: driver)
+      (fusion: gl-cairo)))
    (fusion:android-generate-modules
-    '((fusion: driver version: (debug))))
+    '((fusion: driver version: (debug))
+      (fusion: gl-cairo version: (debug))))
    ;; Copy all versions of the spheres' generated C files to Android directories
    ; (fusion:android-install-modules-c-files
    ;  (%module-deep-dependencies-to-load

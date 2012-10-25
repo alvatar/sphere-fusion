@@ -9,12 +9,12 @@
    draw:
    (let ((posx 180.0))
      (lambda (cr)
-       (cairo:set-source-rgba cr 1.0 1.0 1.0 1.0)
-       (cairo:rectangle cr 0.0 0.0 280.0 500.0)
-       (cairo:fill cr)
-       (cairo:arc cr posx 180.0 150.0 0.0 6.28)
-       (cairo:set-source-rgb cr 0.5 0.5 0.0)
-       (cairo:fill cr)
+       (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
+       (cairo_rectangle cr 0.0 0.0 280.0 500.0)
+       (cairo_fill cr)
+       (cairo_arc cr posx 180.0 150.0 0.0 6.28)
+       (cairo_set_source_rgb cr 0.5 0.5 0.0)
+       (cairo_fill cr)
        (set! posx (+ 1.0 posx))))
    handle-event:
    (lambda (event)
@@ -50,4 +50,3 @@
         ((= type SDL_FINGERDOWN)
          (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "FINGER DOWN!")))))))
 
-(main)

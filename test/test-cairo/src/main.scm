@@ -10,23 +10,23 @@
 
 (define (create-cairo-surface buffer width height channels)
   (let ((cairo-surface
-         (cairo:image-surface-create-for-data
+         (cairo_image_surface_create_for_data
           (void*->unsigned-char* buffer)
           CAIRO_FORMAT_ARGB32
           width
           height
           (* channels width))))
-    (unless (equal? (cairo:surface-status cairo-surface) CAIRO_STATUS_SUCCESS)
+    (unless (equal? (cairo_surface_status cairo-surface) CAIRO_STATUS_SUCCESS)
             (free buffer)
             (error "Couldn't create cairo surface"))
-    (let ((cairo (cairo:create cairo-surface)))
-      (unless (equal? (cairo:status cairo) CAIRO_STATUS_SUCCESS)
+    (let ((cairo (cairo_create cairo-surface)))
+      (unless (equal? (cairo_status cairo) CAIRO_STATUS_SUCCESS)
               (free buffer)
               (error "Couldn't create context"))
       (make-will cairo
                  (lambda (c)
                    (free buffer)
-                   (cairo:destroy c)))
+                   (cairo_destroy c)))
       (values cairo cairo-surface buffer))))
 
 (define (handle-event event)
@@ -65,12 +65,12 @@
 (define draw
   (let ((posx 180.0))
     (lambda (cr)
-      (cairo:set-source-rgba cr 1.0 1.0 1.0 1.0)
-      (cairo:rectangle cr 0.0 0.0 (exact->inexact 1280) (exact->inexact 727))
-      (cairo:fill cr)
-      (cairo:arc cr posx 180.0 150.0 0.0 6.28)
-      (cairo:set-source-rgb cr 0.5 0.5 0.0)
-      (cairo:fill cr)
+      (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
+      (cairo_rectangle cr 0.0 0.0 (exact->inexact 1280) (exact->inexact 727))
+      (cairo_fill cr)
+      (cairo_arc cr posx 180.0 150.0 0.0 6.28)
+      (cairo_set_source_rgb cr 0.5 0.5 0.0)
+      (cairo_fill cr)
       (set! posx (+ 1.0 posx)))))
 
 (define (main)

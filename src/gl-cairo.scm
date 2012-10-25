@@ -17,23 +17,23 @@
                         sizeof-unsigned-char)))
     (unless buffer (error "Unable to allocate buffer"))
     (let ((cairo-surface
-           (cairo:image-surface-create-for-data
+           (cairo_image_surface_create_for_data
             (void*->unsigned-char* buffer)
             CAIRO_FORMAT_ARGB32
             width
             height
             (* channels width))))
-      (unless (equal? (cairo:surface-status cairo-surface) CAIRO_STATUS_SUCCESS)
+      (unless (equal? (cairo_surface_status cairo-surface) CAIRO_STATUS_SUCCESS)
               (free buffer)
               (error "Couldn't create cairo surface"))
-      (let ((cairo (cairo:create cairo-surface)))
-        (unless (equal? (cairo:status cairo) CAIRO_STATUS_SUCCESS)
+      (let ((cairo (cairo_create cairo-surface)))
+        (unless (equal? (cairo_status cairo) CAIRO_STATUS_SUCCESS)
                 (free buffer)
                 (error "Couldn't create context"))
         (make-will cairo
                    (lambda (c)
                      (free buffer)
-                     (cairo:destroy c)))
+                     (cairo_destroy c)))
         (values cairo
                 buffer)))))
 

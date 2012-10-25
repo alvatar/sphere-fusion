@@ -331,6 +331,8 @@ include $(BUILD_SHARED_LIBRARY)
                                          #!key
                                          (compiler-options '())
                                          (import-modules '()))
+  (define-cond-expand-feature mobile)
+  (define-cond-expand-feature android)
   (unless (file-exists? (fusion-setup-directory))
           (error "You need to use (fusion-setup) before compiling the project"))
   (let* ((core-modules (if (memq 'debug compiler-options)

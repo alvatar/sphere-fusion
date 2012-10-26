@@ -55,13 +55,13 @@
         (x1 (exact->inexact (+ x0 width)))
         (y1 (exact->inexact (+ y0 height))))
    (let ((coords
-          (vector->GLfloat* `#(,x0 ,y0
+          (vector->GLfloat* `#(,x0 ,y1
                                0.0 0.0
-                               ,x1 ,y0
-                               1.0 0.0
                                ,x1 ,y1
+                               1.0 0.0
+                               ,x1 ,y0
                                1.0 1.0
-                               ,x0 ,y1
+                               ,x0 ,y0
                                0.0 1.0)))
          (indices (vector->GLushort* '#(0 1 2 0 3 2)))
          (vertex-size (* (+ 2 2) sizeof-GLfloat)))

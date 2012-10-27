@@ -141,7 +141,6 @@
                               ((exit)
                                (leave)))
                             (event-loop)))
-                    ;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_OES_draw_texture")))
                     (glClearColor 1.0 0.0 0.0 1.0)
                     (glClear GL_COLOR_BUFFER_BIT)
                     (draw cairo)

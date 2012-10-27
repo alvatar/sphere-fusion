@@ -47,6 +47,8 @@
   (glBindTexture GL_TEXTURE_2D texture)
   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+  (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
   (glMatrixMode GL_MODELVIEW)
   (glLoadIdentity)
   (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA width height 0 GL_RGBA GL_UNSIGNED_BYTE cairo-surface-data)
@@ -54,25 +56,25 @@
         (y0 (exact->inexact y0))
         (x1 (exact->inexact (+ x0 width)))
         (y1 (exact->inexact (+ y0 height))))
-   (let ((coords
-          (vector->GLfloat* `#(,x0 ,y1
-                               0.0 0.0
-                               ,x1 ,y1
-                               1.0 0.0
-                               ,x1 ,y0
-                               1.0 1.0
-                               ,x0 ,y0
-                               0.0 1.0)))
-         (indices (vector->GLushort* '#(0 1 2 0 3 2)))
-         (vertex-size (* (+ 2 2) sizeof-GLfloat)))
-     (glEnableClientState GL_VERTEX_ARRAY)
-     (glEnableClientState GL_TEXTURE_COORD_ARRAY)
-     (let* ((vertex-pointer (->void* coords))
-            (texcoords-pointer (void*-offset vertex-pointer
-                                             (* 2 sizeof-GLfloat))))
-       (glVertexPointer 2 GL_FLOAT vertex-size vertex-pointer)
-       (glTexCoordPointer 2 GL_FLOAT vertex-size texcoords-pointer)
-       (glDrawElements GL_TRIANGLES 6 GL_UNSIGNED_SHORT (->void* indices)))))
+    (let ((coords
+           (vector->GLfloat* `#(,x0 ,y1
+                                    0.0 0.0
+                                    ,x1 ,y1
+                                    1.0 0.0
+                                    ,x1 ,y0
+                                    1.0 1.0
+                                    ,x0 ,y0
+                                    0.0 1.0)))
+          (indices (vector->GLushort* '#(0 1 2 0 3 2)))
+          (vertex-size (* (+ 2 2) sizeof-GLfloat)))
+      (glEnableClientState GL_VERTEX_ARRAY)
+      (glEnableClientState GL_TEXTURE_COORD_ARRAY)
+      (let* ((vertex-pointer (->void* coords))
+             (texcoords-pointer (void*-offset vertex-pointer
+                                              (* 2 sizeof-GLfloat))))
+        (glVertexPointer 2 GL_FLOAT vertex-size vertex-pointer)
+        (glTexCoordPointer 2 GL_FLOAT vertex-size texcoords-pointer)
+        (glDrawElements GL_TRIANGLES 6 GL_UNSIGNED_SHORT (->void* indices)))))
   (glPopMatrix)
   (glDisableClientState GL_TEXTURE_COORD_ARRAY)
   (glDisableClientState GL_VERTEX_ARRAY)
@@ -139,12 +141,13 @@
                               ((exit)
                                (leave)))
                             (event-loop)))
+                    ;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_OES_draw_texture")))
                     (glClearColor 1.0 0.0 0.0 1.0)
                     (glClear GL_COLOR_BUFFER_BIT)
                     (draw cairo)
                     (fusion:gl-render-cairo-surface cairo-surface-data (GLuint*-ref textures 0) 0 0 screen-width screen-height)
                     (SDL_GL_SwapWindow win)
-                    (SDL_Delay 40)
+                    (SDL_Delay 400)
                     (main-loop))))
                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
                (glDeleteTextures num-textures textures)

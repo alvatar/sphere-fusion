@@ -88,6 +88,7 @@
                       (android-directory))
           (copy-files (map (lambda (n) (string-append opath n))
                            '("jni/Android.mk"
+                             "jni/Application.mk"
                              "jni/SDL"
                              "jni/build"
                              "jni/gambit"))

@@ -1,8 +1,8 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Test for Cairo with OpenGL
 
-(%include base: ffi#)
-(%include sdl2: sdl2#)
+;(%include base: ffi#)
+;(%include sdl2: sdl2#)
 
 (define (main)
   ((fusion:create-simple-gl-cairo config: '(width: 1280 height: 752))
@@ -50,4 +50,3 @@
              (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Window Restored")))))
         ((= type SDL_FINGERDOWN)
          (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "FINGER DOWN!")))))))
-

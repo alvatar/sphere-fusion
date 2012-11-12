@@ -1,8 +1,6 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Core functionality of Fusion
 
-(%include base: ffi#)
-
 (define (fusion:critical-error . msgs)
   (SDL_LogError SDL_LOG_CATEGORY_APPLICATION
                 (apply string-append

@@ -17,6 +17,7 @@
    (sdl2: sdl2 version: (debug))))
  (gl-cairo
   (include
+   (base: ffi#)
    (sdl2: sdl2#))
   (load
    (sdl2: sdl2)
@@ -25,6 +26,7 @@
                 (else (opengl: gl)))))
  ((= gl-cairo version: (debug))
   (include
+   (base: ffi#)
    (sdl2: sdl2#))
   (load
    (sdl2: sdl2 version: (debug))

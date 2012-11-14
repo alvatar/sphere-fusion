@@ -280,7 +280,7 @@ include $(BUILD_SHARED_LIBRARY)
                                 (%module-filename-c m version: version)))
                modules))
          (code `(begin
-                  (include "~~spheres/prelude#.scm")
+                  (include "~~spheres/prelude-macros.scm")
                   (define-cond-expand-feature mobile)
                   (define-cond-expand-feature android)
                   (for-each
@@ -303,7 +303,7 @@ include $(BUILD_SHARED_LIBRARY)
   (info "")
   (let ((code
          `(begin
-            (include "~~spheres/prelude#.scm")
+            (include "~~spheres/prelude-macros.scm")
             (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
                                                            (%module-filename-c m)))
                                      modules)

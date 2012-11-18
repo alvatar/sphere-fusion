@@ -274,27 +274,20 @@ include $(BUILD_SHARED_LIBRARY)
   (info "")
   (info "Generate C code")
   (info "")
-  (let* ((output-filenames
-          (map (lambda (m)
-                 (string-append (default-lib-directory)
-                                (%module-filename-c m version: version)))
-               modules))
-         (code `(begin
-                  (include "~~spheres/prelude-macros.scm")
-                  (define-cond-expand-feature mobile)
-                  (define-cond-expand-feature android)
-                  (for-each
-                   (lambda (module output-filename)
-                     (compile-file-to-target
-                      (string-append (%module-path-src module) (%module-filename-scm module))
-                      output: output-filename
-                      options: ',compiler-options))
-                   ',modules
-                   ',output-filenames))))
-    (if verbose
-        (pp code))
-    (unless (= 0 (gambit-eval-here code))
-            (error "error generating Android C code"))))
+  (let ((output-filenames
+         (map (lambda (m)
+                (string-append (default-lib-directory)
+                               (%module-filename-c m version: version)))
+              modules)))
+    (for-each
+     (lambda (m output-filename)
+       (sake:compile-to-c m
+                          output: output-filename
+                          compiler-options: compiler-options
+                          cond-expand-features: '(mobile android)
+                          verbose: verbose))
+     modules
+     output-filenames)))
 
 ;;; Generate Gambit link file
 (define (fusion:android-generate-link-file modules #!key (verbose #f))

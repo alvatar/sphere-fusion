@@ -15,7 +15,7 @@ ___END_C_LINKAGE
 ___setup_params_struct setup_params;
 
 
-void SDL_main() {
+int SDL_main(int argc, char* argv[]) {
 
     // <-- BEGIN GAMBIT INITIALIZATION
     // Taken from gambit, lib/main.c. 

@@ -6,13 +6,9 @@
 
 (dependencies:
  (driver
-  (include
-   (sdl2: sdl2-macros))
   (load
    (sdl2: sdl2)))
  ((= driver version: (debug))
-  (include
-   (sdl2: sdl2-macros))
   (load
    (sdl2: sdl2 version: (debug))))
  (gl-cairo

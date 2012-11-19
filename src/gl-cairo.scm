@@ -93,6 +93,8 @@
                   SDL_WINDOWPOS_CENTERED
                   (cond-expand (mobile 0) (else init-screen-width))
                   (cond-expand (mobile 0) (else init-screen-height))
+                  SDL_WINDOW_OPENGL
+                  #;
                   (bitwise-ior SDL_WINDOW_OPENGL
                                SDL_WINDOW_BORDERLESS)))
             (screen-width* (make-int* 1))
@@ -144,7 +146,6 @@
                     (draw cairo)
                     (fusion:gl-render-cairo-surface cairo-surface-data (GLuint*-ref textures 0) 0 0 screen-width screen-height)
                     (SDL_GL_SwapWindow win)
-                    (SDL_Delay 400)
                     (main-loop))))
                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
                (glDeleteTextures num-textures textures)

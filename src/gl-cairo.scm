@@ -92,6 +92,8 @@
                   SDL_WINDOWPOS_CENTERED
                   (cond-expand (mobile 0) (else init-screen-width))
                   (cond-expand (mobile 0) (else init-screen-height))
+                  SDL_WINDOW_OPENGL
+                  #;
                   (bitwise-ior SDL_WINDOW_OPENGL
                                SDL_WINDOW_BORDERLESS)))
             (screen-width* (make-int* 1))

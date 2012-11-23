@@ -13,6 +13,7 @@
    (sdl2: sdl2 version: (debug))))
  (gl-cairo
   (include
+   (base: base-macros)
    (base: ffi-macros)
    (sdl2: sdl2-macros))
   (load
@@ -23,6 +24,7 @@
                 (else (opengl: gl)))))
  ((= gl-cairo version: (debug))
   (include
+   (base: base-macros)
    (base: ffi-macros)
    (sdl2: sdl2-macros))
   (load

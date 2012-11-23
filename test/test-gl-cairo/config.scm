@@ -4,6 +4,7 @@
 (dependencies:
  (main
   (include
+   (base: base-macros) ; This one should actually be handled by spheres
    (base: ffi-macros) ; This one should actually be handled by spheres
    (sdl2: sdl2-macros))
   (load
@@ -11,6 +12,7 @@
    (base: debug/debuggee)))
  ((= main version: (debug))
   (include
+   (base: base-macros) ; This one should actually be handled by spheres
    (base: ffi-macros) ; This one should actually be handled by spheres
    (sdl2: sdl2-macros))
   (load

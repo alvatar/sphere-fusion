@@ -1,12 +1,8 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Test for Cairo with OpenGL
 
-;(%include base: ffi#)
-;(%include sdl2: sdl2#)
-
 (define (main)
-  ((fusion:create-simple-gl-cairo config: '(width: 1280 height: 752))
-   draw:
+  ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
    (let ((posx 180.0))
      (lambda (cr)
        (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_OES_draw_texture")))
@@ -17,7 +13,6 @@
        (cairo_set_source_rgb cr 0.5 0.5 0.0)
        (cairo_fill cr)
        (set! posx (+ 1.0 posx))))
-   handle-event:
    (lambda (event)
      (let ((type (SDL_Event-type event)))
        (cond

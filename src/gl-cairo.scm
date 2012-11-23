@@ -79,11 +79,10 @@
   (glDisable GL_BLEND)
   (glDisable GL_TEXTURE_2D))
 
-(define (fusion:create-simple-gl-cairo #!key
-                                       (config '(width: 1280 height: 752)))
-  (lambda (#!key draw handle-event)
-    (let ((init-screen-width (cadr (member width: config)))
-          (init-screen-height (cadr (member height: config))))
+(define (fusion:create-simple-gl-cairo config)
+  (lambda (draw handle-event)
+    (let ((init-screen-width (cadr (memq 'width: config)))
+          (init-screen-height (cadr (memq 'height: config))))
       (if (< (SDL_Init SDL_INIT_VIDEO) 0)
           (fusion:critical-error "Couldn't initialize SDL!"))
       ;; SDL

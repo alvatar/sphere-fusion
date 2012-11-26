@@ -50,8 +50,8 @@
 
 ;;; Clean all fusion files for current project
 (define (fusion:clean)
-  (delete-file (fusion-setup-directory))
-  (delete-file (default-lib-directory)))
+  (delete-file (fusion-setup-directory) recursive: #t)
+  (delete-file (default-lib-directory) recursive: #t))
 
 ;;; Update fusion-generated C files
 (define (fusion:update)
@@ -404,4 +404,4 @@ include $(BUILD_SHARED_LIBRARY)
 
 (define-task clean ()
   (fusion:clean)
-  (delete-file (current-build-directory)))
+  (delete-file (current-build-directory) recursive: #t))

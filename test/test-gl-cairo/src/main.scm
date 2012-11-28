@@ -10,7 +10,7 @@
        (cairo_rectangle cr 0.0 0.0 280.0 500.0)
        (cairo_fill cr)
        (cairo_arc cr posx 180.0 150.0 0.0 6.28)
-       (cairo_set_source_rgb cr 0.5 0.5 0.0)
+       (cairo_set_source_rgba cr 0.0 0.0 1.0 1.0)
        (cairo_fill cr)
        (set! posx (+ 1.0 posx))))
    (lambda (event)

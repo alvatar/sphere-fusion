@@ -49,7 +49,7 @@
   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
   (glMatrixMode GL_MODELVIEW)
   (glLoadIdentity)
-  (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA width height 0 GL_RGBA GL_UNSIGNED_BYTE cairo-surface-data)
+  (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA width height 0 GL_BGRA GL_UNSIGNED_BYTE cairo-surface-data)
   (let ((x0 (exact->inexact x0))
         (y0 (exact->inexact y0))
         (x1 (exact->inexact (+ x0 width)))

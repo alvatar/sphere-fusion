@@ -9,7 +9,7 @@
   (fusion:android-generate-manifest-and-properties
    api-level: 8
    app-name: "Cairo-OpenGL Fusion App")
-  (fusion:android-import-addon '(cairo gl))
+  (fusion:android-import-addon '(cairo gl libpng))
   (fusion:android-compile-and-link '(main))
   (fusion:android-run-app))
 

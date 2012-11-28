@@ -5,7 +5,7 @@
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
    (let ((posx 180.0))
      (lambda (cr)
-       (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_OES_draw_texture")))
+       ;; (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_OES_draw_texture")))
        (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
        (cairo_rectangle cr 0.0 0.0 280.0 500.0)
        (cairo_fill cr)

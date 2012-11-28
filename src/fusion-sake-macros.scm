@@ -32,12 +32,6 @@
 (define (android-project-properties-file)
   (string-append (android-directory) "project.properties"))
 
-;; (define android-driver-module
-;;   (make-parameter '(fusion: driver)))
-
-;; (define android-driver-debug-module
-;;   (make-parameter '(fusion: driver version: (debug))))
-
 (define android-link-file
   (make-parameter "linkfile_.c"))
 
@@ -295,12 +289,11 @@ include $(BUILD_SHARED_LIBRARY)
   (info "Generate link file")
   (info "")
   (let ((code
-         `(begin
-            (include "~~spheres/prelude-macros.scm")
-            (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
-                                                           (%module-filename-c m)))
-                                     modules)
-                              output: ,(string-append (android-build-directory) (android-link-file))))))
+         `((include "~~spheres/prelude-macros.scm")
+           (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
+                                                          (%module-filename-c m)))
+                                    modules)
+                             output: ,(string-append (android-build-directory) (android-link-file))))))
     (if verbose
         (pp code))
     (unless (= 0 (gambit-eval-here code))
@@ -365,8 +358,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 ;;; Call Android clean ant task
 (define (fusion:android-clean)
-  (unless (= 0 (gambit-eval-here
-                '(shell-command "ant -s android/build.xml clean")))
+  (unless (= 0 (shell-command "ant -s android/build.xml clean"))
           (error "error in \"ant clean\" command")))
 
 ;;; Upload file to SD card

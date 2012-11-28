@@ -1,4 +1,4 @@
-(%include fusion-sake-macros)
+(%include sake-fusion)
 
 ;-------------------------------------------------------------------------------
 ; Host OS: Windows, Mac, Linux

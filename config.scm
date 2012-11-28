@@ -15,11 +15,13 @@
   (load
    (sdl2: sdl2)
    (cairo: cairo)
-   (cond-expand (mobile (opengl: gl-es))
+   (cond-expand (mobile (opengl: gl-es)
+                        (opengl: gl-es-ext))
                 (else (opengl: gl)))))
  ((= gl-cairo version: (debug))
   (load
    (sdl2: sdl2 version: (debug))
    (cairo: cairo version: (debug))
-   (cond-expand (mobile (opengl: gl-es version: (debug)))
+   (cond-expand (mobile (opengl: gl-es version: (debug))
+                        (opengl: gl-es-ext version: (debug)))
                 (else (opengl: gl version: (debug)))))))

@@ -522,6 +522,17 @@ SDL_VideoInit(const char *driver_name)
         _this->DestroyWindowFramebuffer = SDL_DestroyWindowTexture;
     }
 
+    /* If we don't use a screen keyboard, turn on text input by default,
+       otherwise programs that expect to get text events without enabling
+       UNICODE input won't get any events.
+
+       Actually, come to think of it, you needed to call SDL_EnableUNICODE(1)
+       in SDL 1.2 before you got text input events.  Hmm...
+     */
+    if (!SDL_HasScreenKeyboardSupport()) {
+        SDL_StartTextInput();
+    }
+
     /* We're ready to go! */
     return 0;
 }
@@ -1168,7 +1179,9 @@ SDL_CreateWindow(const char *title, int x, int y, int w, int h, Uint32 flags)
             SDL_SetError("No OpenGL support in video driver");
             return NULL;
         }
-        SDL_GL_LoadLibrary(NULL);
+        if (SDL_GL_LoadLibrary(NULL) < 0) {
+            return NULL;
+        }
     }
     window = (SDL_Window *)SDL_calloc(1, sizeof(*window));
     window->magic = &_this->window_magic;
@@ -1550,19 +1563,47 @@ SDL_GetWindowSize(SDL_Window * window, int *w, int *h)
     CHECK_WINDOW_MAGIC(window, );
 
     if (_this && window && window->magic == &_this->window_magic) {
-        if (w) {
-            *w = window->w;
+        *w = window->w;
+        *h = window->h;
+    }
+}
+
+void
+SDL_SetWindowMinimumSize(SDL_Window * window, int min_w, int min_h)
+{
+    CHECK_WINDOW_MAGIC(window, );
+    
+    if (!(window->flags & SDL_WINDOW_FULLSCREEN)) {
+        window->min_w = min_w;
+        window->min_h = min_h;
+        if (_this->SetWindowMinimumSize) {
+            _this->SetWindowMinimumSize(_this, window);
         }
-        if (h) {
-            *h = window->h;
-        }
-    } else {
-        if (w) {
-            *w = 0;
-        }
-        if (h) {
-            *h = 0;
-        }
+        /* Ensure that window is not smaller than minimal size */
+        SDL_SetWindowSize(window, SDL_max(window->w, window->min_w), SDL_max(window->h, window->min_h));
+    }
+}
+
+void
+SDL_GetWindowMinimumSize(SDL_Window * window, int *min_w, int *min_h)
+{
+    int dummy;
+    
+    if (!min_w) {
+        min_w = &dummy;
+    }
+    if (!min_h) {
+        min_h = &dummy;
+    }
+    
+    *min_w = 0;
+    *min_h = 0;
+    
+    CHECK_WINDOW_MAGIC(window, );
+    
+    if (_this && window && window->magic == &_this->window_magic) {
+        *min_w = window->min_w;
+        *min_h = window->min_h;
     }
 }
 
@@ -1848,11 +1889,18 @@ SDL_GetWindowGammaRamp(SDL_Window * window, Uint16 * red,
     return 0;
 }
 
-static void
+void
 SDL_UpdateWindowGrab(SDL_Window * window)
 {
-    if ((window->flags & SDL_WINDOW_INPUT_FOCUS) && _this->SetWindowGrab) {
-        _this->SetWindowGrab(_this, window);
+    if (_this->SetWindowGrab) {
+        SDL_bool grabbed;
+        if ((window->flags & SDL_WINDOW_INPUT_GRABBED) &&
+            (window->flags & SDL_WINDOW_INPUT_FOCUS)) {
+            grabbed = SDL_TRUE;
+        } else {
+            grabbed = SDL_FALSE;
+        }
+        _this->SetWindowGrab(_this, window, grabbed);
     }
 }
 
@@ -1922,10 +1970,7 @@ SDL_OnWindowFocusGained(SDL_Window * window)
         _this->SetWindowGammaRamp(_this, window, window->gamma);
     }
 
-    if ((window->flags & (SDL_WINDOW_INPUT_GRABBED | SDL_WINDOW_FULLSCREEN)) &&
-        _this->SetWindowGrab) {
-        _this->SetWindowGrab(_this, window);
-    }
+    SDL_UpdateWindowGrab(window);
 }
 
 void
@@ -1935,10 +1980,7 @@ SDL_OnWindowFocusLost(SDL_Window * window)
         _this->SetWindowGammaRamp(_this, window, window->saved_gamma);
     }
 
-    if ((window->flags & (SDL_WINDOW_INPUT_GRABBED | SDL_WINDOW_FULLSCREEN)) &&
-        _this->SetWindowGrab) {
-        _this->SetWindowGrab(_this, window);
-    }
+    SDL_UpdateWindowGrab(window);
 
     /* If we're fullscreen on a single-head system and lose focus, minimize */
     if ((window->flags & SDL_WINDOW_FULLSCREEN) && _this->num_displays == 1) {
@@ -2769,19 +2811,47 @@ SDL_GetWindowWMInfo(SDL_Window * window, struct SDL_SysWMinfo *info)
 void
 SDL_StartTextInput(void)
 {
+    SDL_Window *window;
+
+    /* First, enable text events */
+    SDL_EventState(SDL_TEXTINPUT, SDL_ENABLE);
+    SDL_EventState(SDL_TEXTEDITING, SDL_ENABLE);
+
+    /* Then show the on-screen keyboard, if any */
+    window = SDL_GetFocusWindow();
+    if (window && _this && _this->SDL_ShowScreenKeyboard) {
+        _this->SDL_ShowScreenKeyboard(_this, window);
+    }
+
+    /* Finally start the text input system */
     if (_this && _this->StartTextInput) {
         _this->StartTextInput(_this);
     }
-    SDL_EventState(SDL_TEXTINPUT, SDL_ENABLE);
-    SDL_EventState(SDL_TEXTEDITING, SDL_ENABLE);
+}
+
+SDL_bool
+SDL_IsTextInputActive(void)
+{
+    return (SDL_GetEventState(SDL_TEXTINPUT) == SDL_ENABLE);
 }
 
 void
 SDL_StopTextInput(void)
 {
+    SDL_Window *window;
+
+    /* Stop the text input system */
     if (_this && _this->StopTextInput) {
         _this->StopTextInput(_this);
     }
+
+    /* Hide the on-screen keyboard, if any */
+    window = SDL_GetFocusWindow();
+    if (window && _this && _this->SDL_HideScreenKeyboard) {
+        _this->SDL_HideScreenKeyboard(_this, window);
+    }
+
+    /* Finally disable text events */
     SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
     SDL_EventState(SDL_TEXTEDITING, SDL_DISABLE);
 }
@@ -2795,39 +2865,12 @@ SDL_SetTextInputRect(SDL_Rect *rect)
 }
 
 SDL_bool
-SDL_HasScreenKeyboardSupport(SDL_Window *window)
+SDL_HasScreenKeyboardSupport(void)
 {
-    if (window && _this && _this->SDL_HasScreenKeyboardSupport) {
-        return _this->SDL_HasScreenKeyboardSupport(_this, window);
+    if (_this && _this->SDL_HasScreenKeyboardSupport) {
+        return _this->SDL_HasScreenKeyboardSupport(_this);
     }
     return SDL_FALSE;
-}
-
-int
-SDL_ShowScreenKeyboard(SDL_Window *window)
-{
-    if (window && _this && _this->SDL_ShowScreenKeyboard) {
-        return _this->SDL_ShowScreenKeyboard(_this, window);
-    }
-    return -1;
-}
-
-int
-SDL_HideScreenKeyboard(SDL_Window *window)
-{
-    if (window && _this && _this->SDL_HideScreenKeyboard) {
-        return _this->SDL_HideScreenKeyboard(_this, window);
-    }
-    return -1;
-}
-
-int
-SDL_ToggleScreenKeyboard(SDL_Window *window)
-{
-    if (window && _this && _this->SDL_ToggleScreenKeyboard) {
-        return _this->SDL_ToggleScreenKeyboard(_this, window);
-    }
-    return -1;
 }
 
 SDL_bool
@@ -2837,6 +2880,81 @@ SDL_IsScreenKeyboardShown(SDL_Window *window)
         return _this->SDL_IsScreenKeyboardShown(_this, window);
     }
     return SDL_FALSE;
+}
+
+#if SDL_VIDEO_DRIVER_WINDOWS
+#include "windows/SDL_windowsmessagebox.h"
+#endif
+#if SDL_VIDEO_DRIVER_COCOA
+#include "cocoa/SDL_cocoamessagebox.h"
+#endif
+#if SDL_VIDEO_DRIVER_UIKIT
+#include "uikit/SDL_uikitmessagebox.h"
+#endif
+#if SDL_VIDEO_DRIVER_X11
+#include "x11/SDL_x11messagebox.h"
+#endif
+
+int
+SDL_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
+{
+    int dummybutton;
+
+    if (!buttonid) {
+        buttonid = &dummybutton;
+    }
+    if (_this && _this->ShowMessageBox) {
+        if (_this->ShowMessageBox(_this, messageboxdata, buttonid) == 0) {
+            return 0;
+        }
+    }
+
+    /* It's completely fine to call this function before video is initialized */
+#if SDL_VIDEO_DRIVER_WINDOWS
+    if (WIN_ShowMessageBox(messageboxdata, buttonid) == 0) {
+        return 0;
+    }
+#endif
+#if SDL_VIDEO_DRIVER_COCOA
+    if (Cocoa_ShowMessageBox(messageboxdata, buttonid) == 0) {
+        return 0;
+    }
+#endif
+#if SDL_VIDEO_DRIVER_UIKIT
+    if (UIKit_ShowMessageBox(messageboxdata, buttonid) == 0) {
+        return 0;
+    }
+#endif
+#if SDL_VIDEO_DRIVER_X11
+    if (X11_ShowMessageBox(messageboxdata, buttonid) == 0) {
+        return 0;
+    }
+#endif
+
+    SDL_SetError("No message system available");
+    return -1;
+}
+
+int
+SDL_ShowSimpleMessageBox(Uint32 flags, const char *title, const char *message, SDL_Window *window)
+{
+    SDL_MessageBoxData data;
+    SDL_MessageBoxButtonData button;
+
+    SDL_zero(data);
+    data.flags = flags;
+    data.title = title;
+    data.message = message;
+    data.numbuttons = 1;
+    data.buttons = &button;
+    data.window = window;
+
+    SDL_zero(button);
+    button.flags |= SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
+    button.flags |= SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
+    button.text = "OK";
+
+    return SDL_ShowMessageBox(&data, NULL);
 }
 
 /* vi: set ts=4 sw=4 expandtab: */

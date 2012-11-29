@@ -153,6 +153,17 @@ extern "C" {
 #define SDL_HINT_VIDEO_X11_XRANDR           "SDL_VIDEO_X11_XRANDR"
 
 /**
+ *  \brief  A variable controlling whether grabbing input grabs the keyboard
+ *
+ *  This variable can be set to the following values:
+ *    "0"       - Grab will affect only the mouse
+ *    "1"       - Grab will affect mouse and keyboard
+ *
+ *  By default SDL will not grab the keyboard so system shortcuts still work.
+ */
+#define SDL_HINT_GRAB_KEYBOARD              "SDL_GRAB_KEYBOARD"
+
+/**
  *  \brief  A variable controlling whether the idle timer is disabled on iOS.
  *
  *  When an iOS app does not receive touches for some time, the screen is
@@ -176,6 +187,14 @@ extern "C" {
  *    "LandscapeLeft", "LandscapeRight", "Portrait" "PortraitUpsideDown"
  */
 #define SDL_HINT_ORIENTATIONS "SDL_IOS_ORIENTATIONS"
+
+
+/**
+ *  \brief  A variable that lets you manually hint extra gamecontroller db entries
+ *
+ *  The variable expected newline delimited rows of gamecontroller config data, see SDL_gamecontroller.h
+ */
+#define SDL_HINT_GAMECONTROLLERCONFIG "SDL_GAMECONTROLLERCONFIG"
 
 
 /**

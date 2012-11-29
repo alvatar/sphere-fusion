@@ -249,9 +249,22 @@ X11_DispatchEvent(_THIS)
 
         /* Gaining input focus? */
     case FocusIn:{
+            if (xevent.xfocus.detail == NotifyInferior) {
+#ifdef DEBUG_XEVENTS
+                printf("window %p: FocusIn (NotifierInferior, ignoring)\n", data);
+#endif
+                break;
+            }
 #ifdef DEBUG_XEVENTS
             printf("window %p: FocusIn!\n", data);
 #endif
+            if (data->pending_focus == PENDING_FOCUS_OUT &&
+                data->window == SDL_GetKeyboardFocus()) {
+                /* We want to reset the keyboard here, because we may have
+                   missed keyboard messages after our previous FocusOut.
+                 */
+                SDL_ResetKeyboard();
+            }
             data->pending_focus = PENDING_FOCUS_IN;
             data->pending_focus_time = SDL_GetTicks() + PENDING_FOCUS_IN_TIME;
         }
@@ -259,6 +272,13 @@ X11_DispatchEvent(_THIS)
 
         /* Losing input focus? */
     case FocusOut:{
+            if (xevent.xfocus.detail == NotifyInferior) {
+                /* We still have focus if a child gets focus */
+#ifdef DEBUG_XEVENTS
+                printf("window %p: FocusOut (NotifierInferior, ignoring)\n", data);
+#endif
+                break;
+            }
 #ifdef DEBUG_XEVENTS
             printf("window %p: FocusOut!\n", data);
 #endif
@@ -386,10 +406,28 @@ X11_DispatchEvent(_THIS)
 
         /* Have we been requested to quit (or another client message?) */
     case ClientMessage:{
-            if ((xevent.xclient.format == 32) &&
+            if ((xevent.xclient.message_type == videodata->WM_PROTOCOLS) &&
+                (xevent.xclient.format == 32) &&
+                (xevent.xclient.data.l[0] == videodata->_NET_WM_PING)) {
+                Window root = DefaultRootWindow(display);
+
+#ifdef DEBUG_XEVENTS
+                printf("window %p: _NET_WM_PING\n", data);
+#endif
+                xevent.xclient.window = root;
+                XSendEvent(display, root, False, SubstructureRedirectMask | SubstructureNotifyMask, &xevent);
+                break;
+            }
+
+            else if ((xevent.xclient.message_type == videodata->WM_PROTOCOLS) &&
+                (xevent.xclient.format == 32) &&
                 (xevent.xclient.data.l[0] == videodata->WM_DELETE_WINDOW)) {
 
+#ifdef DEBUG_XEVENTS
+                printf("window %p: WM_DELETE_WINDOW\n", data);
+#endif
                 SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_CLOSE, 0, 0);
+                break;
             }
         }
         break;

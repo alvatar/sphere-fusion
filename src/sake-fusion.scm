@@ -51,7 +51,7 @@
 (define (fusion:update)
   (unless (fusion:precompiled?)
           (fusion:clean)
-          (error "Prior to creating a Fusion project, you need to run 'sake compile' in Fusion Framework"))
+          (err "Prior to creating a Fusion project, you need to run 'sake compile' in Fusion Framework"))
   (copy-files (list (string-append (%sphere-path 'fusion) (android-directory-suffix) "jni/build"))
               (android-jni-directory)))
 
@@ -68,7 +68,7 @@
           (fusion:clean)
           (unless (fusion:precompiled?)
                   (fusion:clean)
-                  (error "Prior to creating a Fusion project, you need to run 'sake compile' in Fusion Framework"))
+                  (err "Prior to creating a Fusion project, you need to run 'sake compile' in Fusion Framework"))
           (make-directory (fusion-setup-directory))
           (make-directory (default-lib-directory))
           (make-directory (android-jni-directory))
@@ -94,9 +94,7 @@
 (define (fusion:android-generate-manifest-and-properties #!key
                                                          (api-level 8)
                                                          (app-name "Fusion App"))
-  (info "")
-  (info "Generate Manifest and properties files")
-  (info "")
+  (info/color 'blue "generating manifest and properties files")
   (call-with-output-file
       (android-manifest-file)
     (lambda (file)
@@ -175,7 +173,7 @@
     (for-each
      (lambda (lib)
        (let ((lib-info (assq lib *fusion:addons-info*)))
-         (assure lib-info (error "internal error in fusion:android-import-addon"))
+         (assure lib-info (err "internal error in fusion:android-import-addon"))
          ;; Check whether it has been imported
          (let ((lib-id (car lib-info)))
            (unless (memq lib-id *fusion:imported-addons*)
@@ -204,9 +202,7 @@
 
 ;;; Generate Android.mk given a set of moduels and optional spheres
 (define (fusion:android-generate-mk modules)
-  (info "")
-  (info "Generate Android.mk")
-  (info "")
+  (info/color 'blue "generating Android.mk")
   (let ((c-files (map (lambda (m) (%module-filename-c m)) modules))
         (produce-addon-string
          (lambda (key)
@@ -275,9 +271,7 @@ include $(BUILD_SHARED_LIBRARY)
                                          (version '())
                                          (compiler-options '())
                                          (verbose #f))
-  (info "")
-  (info "Generate C code")
-  (info "")
+  (info/color 'blue "generating C code")
   (let ((output-filenames
          (map (lambda (m)
                 (string-append (default-lib-directory)
@@ -295,9 +289,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 ;;; Generate Gambit link file
 (define (fusion:android-generate-link-file modules #!key (verbose #f))
-  (info "")
-  (info "Generate link file")
-  (info "")
+  (info/color 'blue "generating link file")
   (let ((code
          `((include "~~spheres/prelude-macros.scm")
            (link-incremental ',(map (lambda (m) (string-append (android-build-directory)
@@ -307,7 +299,7 @@ include $(BUILD_SHARED_LIBRARY)
     (if verbose
         (pp code))
     (unless (= 0 (gambit-eval-here code))
-            (error "error generating link file"))))
+            (err "err generating link file"))))
 
 ;;; Copies passed files to Android build directory
 (define (fusion:android-install-modules-c-files modules)
@@ -329,7 +321,7 @@ include $(BUILD_SHARED_LIBRARY)
   (define-cond-expand-feature mobile)
   (define-cond-expand-feature android)
   (unless (file-exists? (fusion-setup-directory))
-          (error "You need to use (fusion-setup) before compiling the project"))
+          (err "You need to use (fusion-setup) before compiling the project"))
   (let* ((core-modules (if (memq 'debug compiler-options)
                            (%module-deep-dependencies-to-load '(fusion: driver version: (debug)))
                            (%module-deep-dependencies-to-load '(fusion: driver))))
@@ -369,11 +361,11 @@ include $(BUILD_SHARED_LIBRARY)
 ;;; Call Android clean ant task
 (define (fusion:android-clean)
   (unless (= 0 (shell-command "ant -s android/build.xml clean"))
-          (error "error in \"ant clean\" command")))
+          (err "err in \"ant clean\" command")))
 
 ;;; Upload file to SD card
 (define (fusion:android-upload-file-to-sd relative-path)
-  (error "unimplemented"))
+  (err "unimplemented"))
 
 ;-------------------------------------------------------------------------------
 ; Desktop
@@ -383,7 +375,7 @@ include $(BUILD_SHARED_LIBRARY)
   (let ((uname (shell-command "uname -o")))
     (cond ((equal? "GNU/Linux" uname) 'linux)
           ((equal? "Darwin" uname) 'osx)
-          (else (error "fusion:current-desltop-platform -> can't detect current platform")))))
+          (else (err "fusion:current-desltop-platform -> can't detect current platform")))))
 
 (define (fusion:desktop-run-interpreted main-module)
   (gambit-eval-here `((%load sdl2: sdl2)
@@ -396,7 +388,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 (define-task init ()
   (if (file-exists? (fusion-setup-directory))
-      (error "It appears that the project has been initialized, please execute task \"clean\" prior to initialization")
+      (err "It appears that the project has been initialized, please execute task \"clean\" prior to initialization")
       (fusion:setup)))
 
 (define-task update ()

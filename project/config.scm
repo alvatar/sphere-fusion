@@ -1,6 +1,6 @@
 (sphere: "sphere-name")
 (paths:
- (fusion: "/data/projects/scheme-fusion"))
+ (fusion: "/data/projects/sphere-fusion"))
 (dependencies:
  (main
   (load

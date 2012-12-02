@@ -65,7 +65,7 @@
          (update-pot-texture
           (cond-expand (mobile
                         (lambda (cairo-surface-data pot-surface-data)
-                          (cairo-copy-surface-to-pot-buffer cairo-surface-data width height
+                          (cairo:copy-surface-to-pot-buffer cairo-surface-data width height
                                                             pot-surface-data pot-size channels)))
                        (else
                         (lambda (c p) (fusion:error "Calling update-pot-texture in a npot-supporting system"))))))

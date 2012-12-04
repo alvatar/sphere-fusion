@@ -134,9 +134,13 @@
       (glDisable GL_TEXTURE_2D))))
 
 (define (fusion:create-simple-gl-cairo config)
-  (lambda (draw handle-event)
+  (lambda (draw handle-event . default-feeds)
+    ;; If default feeds are given, then you need two: initial-events-feed and default-events-return
     (let ((init-screen-width (cadr (memq 'width: config)))
-          (init-screen-height (cadr (memq 'height: config))))
+          (init-screen-height (cadr (memq 'height: config)))
+          ;; TODO: Improve with some optional arguments method
+          (initial-events-feed (if (null? default-feeds) '() (car default-feeds)))
+          (default-events-return (if (null? default-feeds) '() (cadr default-feeds))))
       (if (< (SDL_Init SDL_INIT_VIDEO) 0)
           (fusion:error "Couldn't initialize SDL!"))
       ;; SDL
@@ -195,19 +199,34 @@
                     (event* (SDL_Event-pointer event)))
                (call/cc
                 (lambda (leave)
-                  (let main-loop ()
-                    (let event-loop ()
-                      (when (= (SDL_PollEvent event*) 1)
-                            (case (handle-event event)
-                              ((exit)
-                               (leave)))
-                            (event-loop)))
+                  (let main-loop ((draw-results initial-events-feed))
                     (glClearColor 1.0 0.0 0.0 1.0)
                     (glClear GL_COLOR_BUFFER_BIT)
-                    (draw cairo)
-                    (render-surface cairo-surface-data pot-surface-data)
-                    (SDL_GL_SwapWindow win)
-                    (main-loop))))
+                    (let ((draw-results-new
+                           (call-with-values
+                               (lambda ()
+                                 (apply draw
+                                        (cons cairo
+                                              (let event-loop ((current-events-results default-events-return))
+                                                (if (= (SDL_PollEvent event*) 1)
+                                                    (let ((events-results
+                                                           (call-with-values
+                                                               (lambda () (apply handle-event (cons event draw-results)))
+                                                             (lambda v (apply list v)))))
+                                                      (case (car events-results)
+                                                        ((exit)
+                                                         (leave)))
+                                                      (event-loop (cdr events-results)))
+                                                    current-events-results)))))
+                             (lambda v (apply list v)))))
+                      
+                      (case (car draw-results-new)
+                        ((draw #!void)
+                         (render-surface cairo-surface-data pot-surface-data)
+                         (SDL_GL_SwapWindow win)
+                         (main-loop (cdr draw-results-new)))
+                        ((exit)
+                         (leave)))))))
                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
                (glDeleteTextures num-textures textures)
                (SDL_GL_DeleteContext ctx)

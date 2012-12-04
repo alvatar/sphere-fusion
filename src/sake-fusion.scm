@@ -378,7 +378,8 @@ include $(BUILD_SHARED_LIBRARY)
           (else (err "fusion:current-desltop-platform -> can't detect current platform")))))
 
 (define (fusion:desktop-run-interpreted main-module)
-  (gambit-eval-here `((%load sdl2: sdl2)
+  (gambit-eval-here `((load "~~lib/syntax-case")
+                      (%load sdl2: sdl2)
                       (%load ,main-module)
                       (main))))
 

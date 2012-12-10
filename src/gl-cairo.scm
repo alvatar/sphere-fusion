@@ -226,7 +226,9 @@
                          (SDL_GL_SwapWindow win)
                          (main-loop (cdr draw-results-new)))
                         ((exit)
-                         (leave)))))))
+                         (leave))
+                        (else
+                         (fusion:error "Unrecognized symbol returned by draw function. Try returning 'draw.")))))))
                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
                (glDeleteTextures num-textures textures)
                (SDL_GL_DeleteContext ctx)

@@ -1,44 +1,36 @@
-(%include sake-fusion)
+(include "src/sake-fusion.scm")
 
-;-------------------------------------------------------------------------------
-; Host OS: Windows, Mac, Linux
-;-------------------------------------------------------------------------------
-
-;; TODO
-
-;-------------------------------------------------------------------------------
-; Android
-;-------------------------------------------------------------------------------
-
-(define-task android:compile ()
+(define-task compile ()
   (parameterize
    ((fusion-setup-directory ""))
    (make-directory (default-lib-directory))
-   (make-directory (android-build-directory))
+   ;; (make-directory (android-build-directory))
    ;; Generate internal Fusion modules
-   (fusion:android-generate-modules
-    '((fusion: driver)
-      (fusion: gl-cairo)))
-   (fusion:android-generate-modules
-    '((fusion: driver version: (debug))
-      (fusion: gl-cairo version: (debug))))))
+   ;; (fusion:android-generate-modules
+   ;;  '((fusion: driver)
+   ;;    (fusion: gl-cairo)))
+   ;; (fusion:android-generate-modules
+   ;;  '((fusion: driver version: (debug))
+   ;;    (fusion: gl-cairo version: (debug))))
 
-(define-task android:clean ()
+   ;; Compile SFusion
+   (sake:compile-to-exe "sfusion" '(sfusion))
+   ;; Compile helpers and application drivers
+
+   ;; Prepare Sake extensions
+   ))
+
+(define-task install ()
+  (copy-file (string-append (current-build-directory) "sfusion")
+             "~~bin/sfusion"))
+
+(define-task clean ()
   (parameterize
    ((fusion-setup-directory ""))
    (delete-file (android-build-directory))
-   (fusion:android-clean)))
-
-;-------------------------------------------------------------------------------
-; Common
-;-------------------------------------------------------------------------------
-
-(define-task compile (android:compile)
-  'init)
-
-(define-task clean (android:clean)
+   (fusion:android-clean))
   (delete-file (current-build-directory))
   'clean)
 
-(define-task all (compile)
+(define-task all (compile install)
   'all)

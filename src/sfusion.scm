@@ -140,10 +140,13 @@
 Usage: sfusion [command] [flags] [operand]
 
 Commands:
-    new (create new project)
+    help [command]
+        show help for the command
+    new [name-of-the-project]
+        create new project
         --template '-t' template to use for project creation
-        [operand] name of the project to create
-    templates (list available templates)
+    templates
+        list available templates
 
 "))
 
@@ -228,7 +231,7 @@ Commands:
      (display-help)
      (exit))
     ((string=? (cadr (command-line)) "help")
-     (display-help))
+     (error "HELP: TODO"))
     ((string=? (cadr (command-line)) "new")
      (receive (project-name template)
               (args-fold (cddr (command-line))
@@ -246,7 +249,7 @@ Commands:
                          ;; Default argument values
                          '())                                
               (replicate-project-structure project-name template)))
-    ((string=? (cadr (command-line)) "template")
+    ((string=? (cadr (command-line)) "templates")
      (println "Available templates:")
      (for-each (lambda (d) (display "  - ") (println d))
                (directory-files templates-directory)))

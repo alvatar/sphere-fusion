@@ -154,21 +154,21 @@ Commands:
   '(define sakefile-test 0))
 
 ;; An idea of how templates could be:
-;; <title>#(string-append "Hello" " world")</title>
+;; <title>=(string-append "Hello" " world")</title>
 ;; <h1>Header</h1>
-;; <h2>Header 2 will receive an injected variable from the caller: #(let-templates () (external-var) (object->string external-var))</h2>
-;; #(let-templates (a b) () ; this template won't use the external-var so it doesn't need to specify it
+;; <h2>Header 2 will receive an injected variable from the caller: =(let-templates () (external-var) (object->string external-var))</h2>
+;; =(let-templates (a b) () ; this template won't use the external-var so it doesn't need to specify it
 ;;    (form-for shoe html: '((multipart #t))
 ;;      (lambda (f)
 ;;        (if (not (null? shoes))
 ;;            (a f shoes) ; template a is passed the variables "f" and "shoes", template b doesn't get any variable
 ;;            (b)))))
-;; -{ <div>Text 1</div>
-;;    #(let-templates (aa) (f shoes) ; we need to receive the parameters passed by the parent template. If empty list then the params are not passed
+;; -( <div>Text 1</div>
+;;    =(let-templates (aa) (f shoes) ; we need to receive the parameters passed by the parent template. If empty list then the params are not passed
 ;;       (string-append "<div>" (aa) "</div>"))
-;;    -{ just some plain text inside text1, which will be surrounded by divs }-
-;;    <div>Text 1 (continues)</div> }-
-;; -{ <div>Text 2</div> }-
+;;    -( just some plain text inside text1, which will be surrounded by divs )
+;;    <div>Text 1 (continues)</div> )
+;; -( <div>Text 2</div> )
 
 
 (define (process-template template-file output-file)

@@ -4,6 +4,7 @@
   (include
    (core: base-macros))
   (load
+   (fabric: algorithm/list)
    (energy: program-arguments)
    (energy: template)
    (energy: error-code)))

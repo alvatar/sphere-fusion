@@ -1,4 +1,4 @@
-(%include fusion: sake-fusion)
+;(##import-include fusion: sake-fusion)
 
 ;-------------------------------------------------------------------------------
 ; Tasks

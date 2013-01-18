@@ -1,8 +1,12 @@
 (sphere: "fusion")
 (dependencies:
  (sfusion
+  (include
+   (core: base-macros))
   (load
-   (energy: program-arguments)))
+   (energy: program-arguments)
+   (energy: template)
+   (energy: error-code)))
  (gl-cairo
   (load
    (sdl2: sdl2)

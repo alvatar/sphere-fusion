@@ -1,18 +1,17 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
-;;; SFusion: generate Scheme Spheres multiplatform programs
+;;; SFusion: generate Scheme Spheres projects from templates
 
 (define templates-directory
   (make-parameter "~~spheres/fusion/templates/"))
 
-(define (display-help)
-  (display
-   "
+(define help:general
+  "
 Usage: sfusion [command] [flags] [operand]
 
 Commands:
     help [command]
         show help for the command
-    new [name-of-the-project]
+    new [flags] [name-of-the-project]
         create new project
         --template '-t' template to use for project creation (required)
         --platform '-p' generate for this target platform (required)
@@ -21,7 +20,38 @@ Commands:
     platforms [template]
         list available platforms for given template
 
-"))
+")
+
+(define help:new
+  "
+Use 'new' command to create a new project from scratch, using a template
+
+Usage: sfusion new [flags] [name-of-the-project]
+    --template '-t' template to use for project creation (required)
+    --platform '-p' generate for this target platform (required)
+
+Example: sfusion new -t opengl -p linux -p android my-new-project
+    Creates the \"my-new-project\" using template \"opengl\" and targetting
+    platforms \"Linux\" and \"Android\"
+
+")
+
+(define help:templates
+  "
+Use 'templates' command to list available templates
+
+Usage: sfusion templates
+
+")
+
+(define help:platforms
+  "
+Use 'platforms' command to list the available platforms offered by a template
+Obtain the list of available templates with the 'templates' command
+
+Usage: sfusion platforms [template]
+
+")
 
 (define (directory-dirs path)
   (filter (lambda (f) (eq? 'directory (file-type (string-append (path-strip-trailing-directory-separator path) "/" f))))
@@ -49,11 +79,14 @@ Commands:
 (define (main)
   (cond
    ((null? (cdr (command-line)))
-    (display-help)
-    (exit))
+    (display help:general))
    ;; Command: help
    ((string=? (cadr (command-line)) "help")
-    (error "HELP: TODO"))
+    (if (null? (cddr (command-line)))
+        (display help:general)
+        (let ((help-al`((new . ,help:new) (templates . ,help:templates) (platforms . ,help:platforms))))
+          (display (or (aif it (assq (string->symbol (caddr (command-line))) help-al) (cdr it))
+                       "No help for this command\n")))))
    ;; Command: new
    ((string=? (cadr (command-line)) "new")
     (args-fold-receive (project-name template platforms)
@@ -86,6 +119,7 @@ Commands:
                          (println "Missing or malformed arguments. Try \"sfusion help\" for more information.")
                          (exit error:invalid-argument))
                        (create-project project-name template platforms)))
+   ;; Command: templates
    ((string=? (cadr (command-line)) "templates")
     (println "Available templates:")
     (for-each (lambda (d) (display "  - ") (println d))
@@ -103,8 +137,11 @@ Commands:
       (println "Available platforms for template " template ":")
       (for-each (lambda (d) (display "  - ") (println d))
                 (directory-dirs template-dir))))
+   ;; Unrecognized command
    (else
-    (println "sfusion: unrecognized command. Try \"sfusion help\" for more information. "))))
+    (println "sfusion: unrecognized command. Try \"sfusion help\" for more information. ")
+    (exit error:invalid-argument)))
+  (exit error:success))
 
 (main)
 

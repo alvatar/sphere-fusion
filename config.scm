@@ -6,9 +6,10 @@
    (energy: program-arguments-macros))
   (load
    (fabric: algorithm/list)
+   (energy: error-code)
+   (energy: functional)
    (energy: program-arguments)
-   (energy: template)
-   (energy: error-code)))
+   (energy: template)))
  (gl-cairo
   (load
    (sdl2: sdl2)

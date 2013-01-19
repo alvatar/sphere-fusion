@@ -1,9 +1,6 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; SFusion: generate Scheme Spheres projects from templates
 
-(define templates-directory
-  (make-parameter "~~spheres/fusion/templates/"))
-
 (define help:general
   "
 Usage: sfusion [command] [flags] [operand]
@@ -53,28 +50,51 @@ Usage: sfusion platforms [template]
 
 ")
 
-(define (directory-dirs path)
+;;! Where templates are expected to be installed
+(define templates-path
+  (make-parameter "~~spheres/fusion/templates/"))
+
+;;! Get a list of current subdirectories
+(define (directory-subdirs path)
   (filter (lambda (f) (eq? 'directory (file-type (string-append (path-strip-trailing-directory-separator path) "/" f))))
           (directory-files path)))
 
+;;! Recursively replicate the template with its different platform implementations
 (define (create-project name template platforms)
-  (let ((template-dir (string-append (templates-directory) template "/")))
-    (if (file-exists? template-dir)
-        (for-each pp (directory-dirs template-dir))))
-  ;; (if (file-exists? project-name)
-  ;;                   (exit error:file-exists)
-  ;;                   (create-directory project-name))
-  ;; (create-directory (string-append project-name "/doc"))
-  ;; (create-directory (string-append project-name "/src"))
-  ;; (create-directory (string-append project-name "/test"))
-  ;; (call-with-output-file
-  ;;     (string-append project-name "/sakefile.scm")
-  ;;   (lambda (f) (pp sakefile f)))
-  ;; (call-with-output-file
-  ;;                   (string-append project-name "/README.md")
-  ;;                 (lambda (f) (display "" f)))
-  ;; (process-template "text-template" (string-append project-name "/config.scm"))
-  )
+  (let* ((template-path (string-append (templates-path) template "/"))
+         (platform-paths (map (lambda (p) (string-append template-path p "/")) platforms))
+         (project-path (string-append (current-directory) name "/")))
+    (unless (file-exists? template-path)
+            (println "Template not available: please see available templates.")
+            (exit error:no-such-file-or-directory))
+    (unless (every file-exists? platform-paths)
+            (println "Platform not available: please see available templates.")
+            (exit error:no-such-file-or-directory))
+    (when (file-exists? name)
+          (println "Aborting: project folder already exists")
+          (exit error:file-exists))
+    (create-directory project-path)
+    (for-each
+     (lambda (source-path)
+       ((Y (lambda (recur) ; Anonymous recursion: call recur with the new relative-path argument
+             (lambda (relative-path)
+               (for-each
+                (lambda (file)
+                  (case (file-info-type (file-info (string-append source-path relative-path file)))
+                    ((regular)
+                     (let ((new-file (string-append project-path relative-path file)))
+                       (when (file-exists? new-file)
+                             (println
+                              "Error creating project: templates for chosen platforms collide. Please contact template author.")
+                             (exit error:operation-not-permitted))
+                       (call-with-output-file
+                           new-file
+                         (lambda (f) (display ((build-template-from-file (string-append source-path relative-path file))) f)))))
+                    ((directory)
+                     (create-directory (string-append project-path relative-path file))
+                     (recur (string-append relative-path file "/")))))
+                (directory-files (string-append source-path relative-path)))))) ""))
+     platform-paths)))
 
 (define (main)
   (cond
@@ -123,25 +143,25 @@ Usage: sfusion platforms [template]
    ((string=? (cadr (command-line)) "templates")
     (println "Available templates:")
     (for-each (lambda (d) (display "  - ") (println d))
-              (directory-dirs (templates-directory))))
+              (directory-subdirs (templates-path))))
    ;; Command: platforms
    ((string=? (cadr (command-line)) "platforms")
     (when (null? (cddr (command-line)))
           (println "Missing argument: template")
           (exit error:invalid-argument))
     (let* ((template (caddr (command-line)))
-           (template-dir (string-append (templates-directory) template "/")))
-      (unless (file-exists? template-dir)
+           (template-path (string-append (templates-path) template "/")))
+      (unless (file-exists? template-path)
               (println "Platform doesn't exist. Try \"sfusion templates\" command for a list of available templates.")
               (exit error:invalid-argument))
       (println "Available platforms for template " template ":")
       (for-each (lambda (d) (display "  - ") (println d))
-                (directory-dirs template-dir))))
+                (directory-subdirs template-path))))
    ;; Unrecognized command
    (else
     (println "sfusion: unrecognized command. Try \"sfusion help\" for more information. ")
     (exit error:invalid-argument)))
   (exit error:success))
 
+;; Run!
 (main)
-

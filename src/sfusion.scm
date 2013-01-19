@@ -56,9 +56,6 @@ Commands:
     (error "HELP: TODO"))
    ;; Command: new
    ((string=? (cadr (command-line)) "new")
-    (when (null? (cddr (command-line)))
-          (println "Missing argument: project name")
-          (exit error:invalid-argument))
     (args-fold-receive (project-name template platforms)
                        (args-fold (cddr (command-line))
                                   ;; Option processors

@@ -60,9 +60,11 @@ Usage: sfusion platforms [template]
           (directory-files path)))
 
 ;;! Recursively replicate the template with its different platform implementations
+;; A "common" platform is processed first for common code
 (define (create-project name template platforms)
   (let* ((template-path (string-append (templates-path) template "/"))
-         (platform-paths (map (lambda (p) (string-append template-path p "/")) platforms))
+         (platform-paths (map (lambda (p) (string-append template-path p "/"))
+                              (cons "common" platforms)))
          (project-path (string-append (current-directory) name "/")))
     (unless (file-exists? template-path)
             (println "Template not available: please see available templates.")
@@ -89,7 +91,10 @@ Usage: sfusion platforms [template]
                              (exit error:operation-not-permitted))
                        (call-with-output-file
                            new-file
-                         (lambda (f) (display ((build-template-from-file (string-append source-path relative-path file))) f)))))
+                         (lambda (f) (display
+                                 ((build-template-from-file (string-append source-path relative-path file) 'platforms)
+                                  (map string->symbol platforms))
+                                 f)))))
                     ((directory)
                      (create-directory (string-append project-path relative-path file))
                      (recur (string-append relative-path file "/")))))
@@ -156,7 +161,7 @@ Usage: sfusion platforms [template]
               (exit error:invalid-argument))
       (println "Available platforms for template " template ":")
       (for-each (lambda (d) (display "  - ") (println d))
-                (directory-subdirs template-path))))
+                (remove (curry string=? "common") (directory-subdirs template-path)))))
    ;; Unrecognized command
    (else
     (println "sfusion: unrecognized command. Try \"sfusion help\" for more information. ")

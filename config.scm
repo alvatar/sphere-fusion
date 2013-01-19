@@ -2,7 +2,8 @@
 (dependencies:
  (sfusion
   (include
-   (core: base-macros))
+   (core: base-macros)
+   (energy: program-arguments-macros))
   (load
    (fabric: algorithm/list)
    (energy: program-arguments)

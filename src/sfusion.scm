@@ -14,8 +14,8 @@ Commands:
         show help for the command
     new [name-of-the-project]
         create new project
-        --template '-t' template to use for project creation
-        --platform '-p' generate for this target platform
+        --template '-t' template to use for project creation (required)
+        --platform '-p' generate for this target platform (required)
     templates
         list available templates
     platforms [template]
@@ -59,35 +59,36 @@ Commands:
     (when (null? (cddr (command-line)))
           (println "Missing argument: project name")
           (exit error:invalid-argument))
-    (unless (char=? #\- (string-ref (caddr (command-line)) 0))
-            (println "Wrong arguments given. Try \"sfusion help\" for more information.")
-            (exit error:invalid-argument))
-    (receive (project-name template platforms)
-             (args-fold (cddr (command-line))
-                        ;; Option processors
-                        (list (option '(#\t "template") #t #f
-                                      (lambda (option name arg template platforms)
-                                        (values arg platforms)))
-                              (option '(#\p "platform") #t #f
-                                      (lambda (option name arg template platforms)
-                                        (values template (cons arg platforms)))))
-                        ;; Unrecognized option processor
-                        (lambda (option name arg . seeds)
-                          (println (string-append "Unrecognized option: -" (string name)))
-                          (exit error:invalid-argument))
-                        ;; Operand processor: its output gets passed to receive
-                        (lambda (operand template platforms)
-                          (values operand template platforms))
-                        ;; Default argument values
-                        #f
-                        '())
-             (unless template
-                     (println "Missing argument: template")
-                     (exit error:invalid-argument))
-             (when (null? platforms)
-                   (println "No target platform given")
-                   (exit error:invalid-argument))
-             (create-project project-name template platforms)))
+    (args-fold-receive (project-name template platforms)
+                       (args-fold (cddr (command-line))
+                                  ;; Option processors
+                                  (list (option '(#\t "template") #t #f
+                                                (lambda (option name arg template platforms)
+                                                  (values arg platforms)))
+                                        (option '(#\p "platform") #t #f
+                                                (lambda (option name arg template platforms)
+                                                  (values template (cons arg platforms)))))
+                                  ;; Unrecognized option processor
+                                  (lambda (option name arg . seeds)
+                                    (println (string-append "Unrecognized option: -" (string name)))
+                                    (exit error:invalid-argument))
+                                  ;; Operand processor: its output gets passed to receive
+                                  (lambda (operand template platforms)
+                                    (values operand template platforms))
+                                  ;; Default argument values
+                                  #f
+                                  '())
+                       (lambda (project-name template platforms)
+                         (unless template
+                                 (println "Missing argument: template")
+                                 (exit error:invalid-argument))
+                         (when (null? platforms)
+                               (println "Missing argument: platform")
+                               (exit error:invalid-argument)))
+                       (lambda args
+                         (println "Missing or malformed arguments. Try \"sfusion help\" for more information.")
+                         (exit error:invalid-argument))
+                       (create-project project-name template platforms)))
    ((string=? (cadr (command-line)) "templates")
     (println "Available templates:")
     (for-each (lambda (d) (display "  - ") (println d))

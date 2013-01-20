@@ -99,7 +99,8 @@ Usage: sfusion platforms [template]
                      (create-directory (string-append project-path relative-path file))
                      (recur (string-append relative-path file "/")))))
                 (directory-files (string-append source-path relative-path)))))) ""))
-     platform-paths)))
+     platform-paths)
+    (println (string-append "Project " name " succesfully created"))))
 
 (define (main)
   (cond

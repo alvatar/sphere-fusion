@@ -11,6 +11,8 @@
    (energy: program-arguments)
    (energy: template)))
  (gl-cairo
+  (include
+   (core: base-macros))
   (load
    (sdl2: sdl2)
    (cairo: cairo)

@@ -1,4 +1,4 @@
-;(##import-include fusion: sake-fusion)
+(include "/data/projects/sphere-fusion/src/sake-fusion.scm")
 
 ;-------------------------------------------------------------------------------
 ; Tasks

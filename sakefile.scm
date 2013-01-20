@@ -1,5 +1,7 @@
 (include "src/sake-fusion.scm")
 
+(define modules '(gl-cairo))
+
 (define-task compile ()
   (parameterize
    ((fusion-setup-directory ""))
@@ -16,21 +18,20 @@
    ;; Compile SFusion
    (sake:compile-to-exe "sfusion" '(sfusion))
    ;; Compile helpers and application drivers
-
-   ;; Prepare Sake extensions
-   ))
+   (sake:compile-c-to-o (sake:compile-to-c 'gl-cairo))))
 
 (define-task install ()
+  (for-each sake:install-compiled-module modules)
+  (sake:install-sphere-to-system extra-directories: '("templates"))
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))
 
 (define-task clean ()
-  (parameterize
-   ((fusion-setup-directory ""))
-   (delete-file (android-build-directory))
-   (fusion:android-clean))
-  (delete-file (current-build-directory))
-  'clean)
+  ;; (parameterize
+  ;;  ((fusion-setup-directory ""))
+  ;;  (delete-file (android-build-directory))
+  ;;  (fusion:android-clean))
+  (sake:default-clean))
 
 (define-task all (compile install)
   'all)

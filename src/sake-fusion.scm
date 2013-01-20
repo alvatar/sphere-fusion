@@ -378,9 +378,13 @@ include $(BUILD_SHARED_LIBRARY)
           (else (err "fusion:current-desltop-platform -> can't detect current platform")))))
 
 (define (fusion:desktop-run-interpreted main-module)
-  (gambit-eval-here `((load "~~lib/syntax-case")
-                      (%load sdl2: sdl2)
-                      (%load ,main-module)
+  (gambit-eval-here `(;;(##namespace (,(string-append (symbol->string (gensym 'sakefile)) "#")))
+                      ;;(##include "~~lib/gambit#.scm")
+                      (##include "~~spheres/core/src/sake/sakelib#.scm")
+                      ;;(##namespace ("" alexpand))
+                      (##include "~~spheres/spheres#.scm")
+                      (##import sdl2: sdl2)
+                      (##import ,main-module)
                       (main))))
 
 ;-------------------------------------------------------------------------------

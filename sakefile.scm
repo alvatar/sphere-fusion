@@ -16,9 +16,7 @@
    ;;    (fusion: gl-cairo version: (debug))))
 
    ;; Compile SFusion
-   (sake:compile-to-exe "sfusion" '(sfusion))
-   ;; Compile helpers and application drivers
-   (sake:compile-c-to-o (sake:compile-to-c 'gl-cairo))))
+   (sake:compile-to-exe "sfusion" '(sfusion))))
 
 (define-task install ()
   (for-each sake:install-compiled-module modules)

@@ -1,6 +1,12 @@
 ;;; Copyright (c) 2012 by Álvaro Castro Castilla
 ;;; Test for Cairo with OpenGL
 
+(##import-include core: base-macros)
+(##import sdl2: sdl2)
+(##import cairo: cairo)
+(##import opengl: gl)
+(##alexpander-include "templates/sdl-cairo-surface/common/src/gl-cairo.scm")
+
 (define (main)
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
    (let ((posx 80.0))
@@ -51,3 +57,5 @@
              (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Window Restored")))))
         ((= type SDL_FINGERDOWN)
          (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "FINGER DOWN!")))))))
+
+(main)

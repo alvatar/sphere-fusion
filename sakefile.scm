@@ -31,5 +31,8 @@
   ;;  (fusion:android-clean))
   (sake:default-clean))
 
+(define-task test ()
+  (sake:test-all))
+
 (define-task all (compile install)
   'all)

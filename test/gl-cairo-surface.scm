@@ -10,7 +10,8 @@
 (define (main)
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
    (let ((posx 80.0))
-     (lambda (cr)
+     (lambda (cr time world)
+       (println (string-append "time: " (object->string time) " ; world: " (object->string world)))
        ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
        (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
        (cairo_rectangle cr 0.0 0.0 500.0 500.0)
@@ -25,7 +26,10 @@
        (cairo_show_text cr "Scheme Fusion test: Cairo / OpenGL")
        (cairo_fill cr)
        (set! posx (+ 1.0 posx))))
-   (lambda (event)
+   (lambda (events world)
+     (pp events)
+     'new-world
+     #;
      (let ((type (SDL_Event-type event)))
        (cond
         ((= type SDL_QUIT)

@@ -134,6 +134,15 @@
       (glDisable GL_BLEND)
       (glDisable GL_TEXTURE_2D))))
 
+(define (sdl:extract-events+pointers)
+  (let recur ()
+    (if (= 1 (SDL_PollEvent #f))
+        (let* ((event (make-SDL_Event))
+               (event* (SDL_Event-pointer event)))
+          (SDL_PollEvent event*)
+          (cons event (recur)))
+        '())))
+
 (define (fusion:create-simple-gl-cairo config)
   (lambda (draw handle-events)
     ;; If default feeds are given, then you need two: initial-events-feed and default-events-return
@@ -196,61 +205,31 @@
              (call/cc
               (lambda (leave)
                 (let main-loop ((draw-input #f))
-                  (##gc) ; Force GC, collect all the events
-                  (let ((draw-output (draw cairo
-                                           (SDL_GetTicks)
-                                           draw-input)))
-                    (let ((events '(TODO:get-events)))
-                      (make-will events
-                                 (lambda (x)
-                                   (for-each (lambda (e) (free (->void* (SDL_Event-pointer e))))
-                                             events)))
-                      (let ((handle-events-output (handle-events events draw-output)))
-                        #;
-                        ((event (make-SDL_Event))
-                        (event* (SDL_Event-pointer event)))
-                        (case handle-events-output
-                          ((exit)
-                           (leave))
-                          (else
-                           (glClearColor 1.0 0.0 0.0 1.0)
-                           (glClear GL_COLOR_BUFFER_BIT)
-                           (render-surface cairo-surface-data pot-surface-data)
-                           (SDL_GL_SwapWindow win)
-                           (main-loop handle-events-output)))))))))
-              ;(free (->void* event*))
-              (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
+                  (##gc)            ; Force GC, collect all the events
+                  (let* ((draw-output (draw cairo (SDL_GetTicks) draw-input))
+                         (events (sdl:extract-events+pointers))
+                         (handle-events-output (handle-events events draw-output)))
+                    ;; FIX CRITICAL: need to free memory, bug!
+                    #;
+                    (for-each (lambda (e) (free (->void* (SDL_Event-pointer e))))
+                              events)
+                    (case handle-events-output
+                      ((exit)
+                       (leave))
+                      (else
+                       (glClearColor 1.0 0.0 0.0 1.0)
+                       (glClear GL_COLOR_BUFFER_BIT)
+                       (render-surface cairo-surface-data pot-surface-data)
+                       (SDL_GL_SwapWindow win)
+                       (main-loop handle-events-output)))
+                    #;
+                    (make-will events
+                    (lambda (x)
+                    (for-each (lambda (e) (free (->void* (SDL_Event-pointer e))))
+                    events)))))))
+             (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
               (glDeleteTextures num-textures textures)
               (SDL_GL_DeleteContext ctx)
               (SDL_DestroyWindow win)
               (SDL_Quit))))))
     (##gc)))
-
-
-;; (let ((draw-results-new
-;;        (call-with-values
-;;            (lambda ()
-;;              (apply draw
-;;                     (cons cairo
-;;                           (let event-loop ((current-events-results default-events-return))
-;;                             (if (= (SDL_PollEvent event*) 1)
-;;                                 (let ((events-results
-;;                                        (call-with-values
-;;                                            (lambda () (apply handle-event (cons event draw-results)))
-;;                                          (lambda v (apply list v)))))
-;;                                   (case (car events-results)
-;;                                     ((exit)
-;;                                      (leave)))
-;;                                   (event-loop (cdr events-results)))
-;;                                 current-events-results)))))
-;;          (lambda v (apply list v)))))
-                      
-;;   (case (car draw-results-new)
-;;     ((draw #!void)
-;;      (render-surface cairo-surface-data pot-surface-data)
-;;      (SDL_GL_SwapWindow win)
-;;      (main-loop (cdr draw-results-new)))
-;;     ((exit)
-;;      (leave))
-;;     (else
-;;      (fusion:error "Unrecognized symbol returned by draw function. Try returning 'draw."))))

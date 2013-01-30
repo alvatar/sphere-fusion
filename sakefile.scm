@@ -1,7 +1,5 @@
 (include "src/sake-fusion.scm")
 
-(define modules '(gl-cairo))
-
 (define-task compile ()
   (parameterize
    ((fusion-setup-directory ""))
@@ -19,7 +17,6 @@
    (sake:compile-to-exe "sfusion" '(sfusion))))
 
 (define-task install ()
-  (for-each sake:install-compiled-module modules)
   (sake:install-sphere-to-system extra-directories: '("templates"))
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))

@@ -134,17 +134,8 @@
       (glDisable GL_BLEND)
       (glDisable GL_TEXTURE_2D))))
 
-(define (sdl:extract-events+pointers)
-  (let recur ()
-    (if (= 1 (SDL_PollEvent #f))
-        (let* ((event (make-SDL_Event))
-               (event* (SDL_Event-pointer event)))
-          (SDL_PollEvent event*)
-          (cons event (recur)))
-        '())))
-
 (define (fusion:create-simple-gl-cairo config)
-  (lambda (draw handle-events)
+  (lambda (handle-event draw init-input)
     ;; If default feeds are given, then you need two: initial-events-feed and default-events-return
     (let ((init-screen-width (cadr (memq 'width: config)))
           (init-screen-height (cadr (memq 'height: config))))
@@ -202,34 +193,33 @@
             (receive
              (cairo cairo-surface-data pot-surface-data)
              (fusion:create-cairo-surface screen-width screen-height texture-channels)
-             (call/cc
-              (lambda (leave)
-                (let main-loop ((draw-input #f))
-                  (##gc)            ; Force GC, collect all the events
-                  (let* ((draw-output (draw cairo (SDL_GetTicks) draw-input))
-                         (events (sdl:extract-events+pointers))
-                         (handle-events-output (handle-events events draw-output)))
-                    ;; FIX CRITICAL: need to free memory, bug!
-                    #;
-                    (for-each (lambda (e) (free (->void* (SDL_Event-pointer e))))
-                              events)
-                    (case handle-events-output
-                      ((exit)
-                       (leave))
-                      (else
-                       (glClearColor 1.0 0.0 0.0 1.0)
-                       (glClear GL_COLOR_BUFFER_BIT)
-                       (render-surface cairo-surface-data pot-surface-data)
-                       (SDL_GL_SwapWindow win)
-                       (main-loop handle-events-output)))
-                    #;
-                    (make-will events
-                    (lambda (x)
-                    (for-each (lambda (e) (free (->void* (SDL_Event-pointer e))))
-                    events)))))))
-             (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
-              (glDeleteTextures num-textures textures)
-              (SDL_GL_DeleteContext ctx)
-              (SDL_DestroyWindow win)
-              (SDL_Quit))))))
+             (let* ((event (make-SDL_Event))
+                    (event* (SDL_Event-pointer event)))
+               (call/cc
+                (lambda (leave)
+                  (let draw-loop ((current-draw-world init-input))
+                    (let ((draw-output-world
+                           (draw cairo
+                                 (SDL_GetTicks)
+                                 ;; First, events are processed. If no events are in queue, world input is passed as output
+                                 (let event-loop ((current-events-world current-draw-world))
+                                   (if (= 1 (SDL_PollEvent event*))
+                                       ;; Event-handling output (the world) is fed back to event handling...
+                                       (let ((handle-event-output (handle-event event current-events-world)))
+                                         (when (eq? handle-event-output 'exit)
+                                               (leave))
+                                         (event-loop handle-event-output))
+                                       ;; ...until there are no remaining events to process
+                                       current-events-world)))))
+                      (glClearColor 1.0 0.0 0.0 1.0)
+                      (glClear GL_COLOR_BUFFER_BIT)
+                      (render-surface cairo-surface-data pot-surface-data)
+                      (SDL_GL_SwapWindow win)
+                      (draw-loop draw-output-world)))))
+               (free (->void* event*))
+                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
+                (glDeleteTextures num-textures textures)
+                (SDL_GL_DeleteContext ctx)
+                (SDL_DestroyWindow win)
+                (SDL_Quit)))))))
     (##gc)))

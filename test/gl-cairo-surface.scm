@@ -2,9 +2,9 @@
 ;;; Test for Cairo with OpenGL
 
 (##import-include core: base-macros)
-(##import sdl2: sdl2)
-(##import cairo: cairo)
-(##import opengl: gl)
+(##import sdl2: sdl2 version: (debug))
+(##import cairo: cairo version: (debug))
+(##import opengl: gl version: (debug))
 (##alexpander-include "templates/sdl-cairo-surface/common/src/gl-cairo.scm")
 
 (define (main)

@@ -5,7 +5,7 @@
 (##import sdl2: sdl2 version: (debug))
 (##import cairo: cairo version: (debug))
 (##import opengl: gl version: (debug))
-(##alexpander-include "templates/sdl-cairo-surface/common/src/gl-cairo.scm")
+(##import-include "templates/sdl-cairo-surface/common/src/gl-cairo.scm")
 
 (define (main)
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))

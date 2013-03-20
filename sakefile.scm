@@ -29,7 +29,8 @@
   (sake:default-clean))
 
 (define-task test ()
-  (sake:test-all))
+  ;(sake:test 'gl-cairo-surface)
+  (sake:test 'gl-2d))
 
 (define-task all (compile install)
   'all)

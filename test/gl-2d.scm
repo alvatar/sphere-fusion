@@ -124,17 +124,15 @@ end-of-shader
                                                   -0.75 -0.75 0.0 1.0))
                  (vertex-positions (vector->GLfloat* vertex-positions-vector))
                  (position-buffer-object* (make-GLuint* 1))
-                 (position-buffer-object (*->GLuint position-buffer-object*))
                  (main-vao* (make-GLuint* 1))
-                 (main-vao (*->GLuint main-vao*))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
-                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
+                                (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders)))
             (for-each glDeleteShader shaders)
 
             ;; Initialize Vertex Buffer
             (glGenBuffers 1 position-buffer-object*)
-            (glBindBuffer GL_ARRAY_BUFFER position-buffer-object)
+            (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object*))
             (glBufferData GL_ARRAY_BUFFER
                           (* (vector-length vertex-positions-vector) sizeof-GLfloat)
                           (->void* vertex-positions)
@@ -143,7 +141,7 @@ end-of-shader
 
             ;; Vertex Array Object
             (glGenVertexArrays 1 main-vao*)
-            (glBindVertexArray main-vao)
+            (glBindVertexArray (*->GLuint main-vao*))
             
             (let* ((event (make-SDL_Event))
                    (event* (SDL_Event-pointer event)))
@@ -170,9 +168,9 @@ end-of-shader
 
                    (glUseProgram shader-program)
                    
-                   (glBindBuffer GL_ARRAY_BUFFER position-buffer-object)
+                   (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object*))
                    (glEnableVertexAttribArray 0)
-                   (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 (integer->void* 0))
+                   (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f)
                    (glDrawArrays GL_TRIANGLES 0 3)
                    
                    (glDisableVertexAttribArray 0)
@@ -180,7 +178,7 @@ end-of-shader
                    
                    (SDL_GL_SwapWindow win)
                    (main-loop))))
-              (free (->void* event*))
+              ;(free (->void* event*))
               (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
               (SDL_GL_DeleteContext ctx)
               (SDL_DestroyWindow win)

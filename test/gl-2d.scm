@@ -2,6 +2,7 @@
 ;;; Test for 2d and texturing with OpenGL
 
 (##import-include core: base-macros)
+(##import-include core: assert-macros)
 (##import sdl2: sdl2 version: (debug))
 (##import cairo: cairo version: (debug))
 (##import opengl: gl version: (debug))
@@ -90,9 +91,10 @@ end-of-shader
   (lambda (config)
     ;; If default feeds are given, then you need two: initial-events-feed and default-events-return
     (let ((init-screen-width (cadr (memq 'width: config)))
-          (init-screen-height (cadr (memq 'height: config))))
-      (if (< (SDL_Init SDL_INIT_VIDEO) 0)
-          (fusion:error "Couldn't initialize SDL!"))
+          (init-screen-height (cadr (memq 'height: config)))
+          (screen-width* (make-int* 1))
+          (screen-height* (make-int* 1)))
+      (when (< (SDL_Init SDL_INIT_VIDEO) 0) report: (fusion:error "Couldn't initialize SDL!"))
       ;; SDL
       (let ((win (SDL_CreateWindow
                   ""
@@ -100,15 +102,12 @@ end-of-shader
                   SDL_WINDOWPOS_CENTERED
                   (cond-expand (mobile 0) (else init-screen-width))
                   (cond-expand (mobile 0) (else init-screen-height))
-                  SDL_WINDOW_OPENGL))
-            (screen-width* (make-int* 1))
-            (screen-height* (make-int* 1)))
+                  SDL_WINDOW_OPENGL)))
+        (unless win (fusion:error "Unable to create render window" (SDL_GetError)))
         (SDL_GetWindowSize win screen-width* screen-height*)
-        (let ((check (if (not win) (fusion:error "Unable to create render window" (SDL_GetError))))
-              (ctx (SDL_GL_CreateContext win))
-              (screen-width (pointer->int screen-width*))
-              (screen-height (pointer->int screen-height*))
-              (texture-channels 4))
+        (let ((screen-width (*->int screen-width*))
+              (screen-height (*->int screen-height*))
+              (ctx (SDL_GL_CreateContext win)))
           (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
           ;; OpenGL
           (SDL_Log (string-append "OpenGL Version: " (unsigned-char*->string (glGetString GL_VERSION))))
@@ -118,31 +117,49 @@ end-of-shader
           (glViewport 0 0 screen-width screen-height)
           (glScissor 0 0 screen-width screen-height)
 
-          ;; Generate programs and buffers
-          (let* ((vertex-positions-vector '#(0.75 0.75 0.0 1.0
+          ;; Generate programs, buffers, textures
+          (let* ((position-buffer-object-id* (make-GLuint* 1))
+                 (main-vao-id* (make-GLuint* 1))
+                 (surface-id* (make-GLuint* 1))
+                 (texture-id* (make-GLuint* 1))
+                 (vertex-positions-vector '#(0.75 0.75 0.0 1.0
                                                   0.75 -0.75 0.0 1.0
                                                   -0.75 -0.75 0.0 1.0))
                  (vertex-positions (vector->GLfloat* vertex-positions-vector))
-                 (position-buffer-object* (make-GLuint* 1))
-                 (main-vao* (make-GLuint* 1))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
-                 (shader-program (fusion:create-program shaders)))
+                 (shader-program (fusion:create-program shaders))
+                 (texture-image* (SDL_LoadBMP "test/128x128.bmp"))
+                 (texture-image (pointer->SDL_Surface texture-image*)))
+            ;; Clean up shaders once the program has been compiled and linked
             (for-each glDeleteShader shaders)
 
+            ;; Texture
+            (glGenTextures 1 texture-id*)
+            (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
+            (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_BASE_LEVEL 0)
+            (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_LEVEL 0)
+            (glTexImage2D GL_TEXTURE_2D 0 3
+                          (SDL_Surface-w texture-image) (SDL_Surface-h texture-image)
+                          0 GL_BGR GL_UNSIGNED_BYTE
+                          (SDL_Surface-pixels texture-image))
+            (glBindTexture GL_TEXTURE_2D 0)
+            (SDL_FreeSurface texture-image*)
+            
             ;; Initialize Vertex Buffer
-            (glGenBuffers 1 position-buffer-object*)
-            (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object*))
+            (glGenBuffers 1 position-buffer-object-id*)
+            (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object-id*))
             (glBufferData GL_ARRAY_BUFFER
                           (* (vector-length vertex-positions-vector) sizeof-GLfloat)
-                          (->void* vertex-positions)
+                          (*->void* vertex-positions)
                           GL_STATIC_DRAW)
             (glBindBuffer GL_ARRAY_BUFFER 0)
 
             ;; Vertex Array Object
-            (glGenVertexArrays 1 main-vao*)
-            (glBindVertexArray (*->GLuint main-vao*))
-            
+            (glGenVertexArrays 1 main-vao-id*)
+            (glBindVertexArray (*->GLuint main-vao-id*))
+
+            ;; Game loop
             (let* ((event (make-SDL_Event))
                    (event* (SDL_Event-pointer event)))
               (call/cc
@@ -168,7 +185,7 @@ end-of-shader
 
                    (glUseProgram shader-program)
                    
-                   (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object*))
+                   (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object-id*))
                    (glEnableVertexAttribArray 0)
                    (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f)
                    (glDrawArrays GL_TRIANGLES 0 3)
@@ -178,7 +195,7 @@ end-of-shader
                    
                    (SDL_GL_SwapWindow win)
                    (main-loop))))
-              ;(free (->void* event*))
+                                        ;(free (*->void* event*))
               (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
               (SDL_GL_DeleteContext ctx)
               (SDL_DestroyWindow win)

@@ -28,10 +28,15 @@
 (define vertex-shader #<<end-of-shader
 
 #version 330
-layout(location = 0) in vec4 position;
+layout(location = 0) in vec2 position;
+layout(location = 5) in vec2 texCoord;
+
+out vec2 colorCoord;
+
 void main()
 {
-  gl_Position = position;
+  gl_Position = vec4(position, 0.0, 1.0);
+  colorCoord = texCoord;
 }
 
 end-of-shader
@@ -40,10 +45,14 @@ end-of-shader
 (define fragment-shader #<<end-of-shader
    
 #version 330
+
+in vec2 colorCoord;
+uniform sampler2D colorTexture;
 out vec4 outputColor;
+
 void main()
 {
-  outputColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+  outputColor = texture(colorTexture, colorCoord);
 }
 
 end-of-shader
@@ -122,10 +131,12 @@ end-of-shader
                  (main-vao-id* (make-GLuint* 1))
                  (surface-id* (make-GLuint* 1))
                  (texture-id* (make-GLuint* 1))
-                 (vertex-positions-vector '#(0.75 0.75 0.0 1.0
-                                                  0.75 -0.75 0.0 1.0
-                                                  -0.75 -0.75 0.0 1.0))
-                 (vertex-positions (vector->GLfloat* vertex-positions-vector))
+                 (texture-unit 0)
+                 (sampler-id* (make-GLuint* 1))
+                 (vertex-data-vector '#(0.75 0.75 0.0 0.0
+                                             0.75 -0.75 0.0 1.0
+                                             -0.75 -0.75 1.0 1.0))
+                 (vertex-data (vector->GLfloat* vertex-data-vector))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders))
@@ -137,27 +148,43 @@ end-of-shader
             ;; Texture
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-            (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_BASE_LEVEL 0)
-            (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_LEVEL 0)
             (glTexImage2D GL_TEXTURE_2D 0 3
                           (SDL_Surface-w texture-image) (SDL_Surface-h texture-image)
                           0 GL_BGR GL_UNSIGNED_BYTE
                           (SDL_Surface-pixels texture-image))
+            (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_BASE_LEVEL 0)
+            (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_LEVEL 0)
             (glBindTexture GL_TEXTURE_2D 0)
             (SDL_FreeSurface texture-image*)
+
+            (glUseProgram shader-program)
+            (glUniform1i (glGetUniformLocation shader-program "colorTexture") texture-unit)
+            (glUseProgram 0)
             
-            ;; Initialize Vertex Buffer
+            (glGenSamplers 1 sampler-id*)
+            (glSamplerParameteri (*->GLuint sampler-id*) GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+            (glSamplerParameteri (*->GLuint sampler-id*) GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+            (glSamplerParameteri (*->GLuint sampler-id*) GL_TEXTURE_MAG_FILTER GL_NEAREST)
+            (glSamplerParameteri (*->GLuint sampler-id*) GL_TEXTURE_MIN_FILTER GL_NEAREST)
+	            
+            ;; Vertex Array Object
             (glGenBuffers 1 position-buffer-object-id*)
             (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object-id*))
             (glBufferData GL_ARRAY_BUFFER
-                          (* (vector-length vertex-positions-vector) sizeof-GLfloat)
-                          (*->void* vertex-positions)
+                          (* (vector-length vertex-data-vector) sizeof-GLfloat)
+                          (*->void* vertex-data)
                           GL_STATIC_DRAW)
-            (glBindBuffer GL_ARRAY_BUFFER 0)
-
-            ;; Vertex Array Object
+            
             (glGenVertexArrays 1 main-vao-id*)
             (glBindVertexArray (*->GLuint main-vao-id*))
+            (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object-id*))
+            (glEnableVertexAttribArray 0)
+            (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 sizeof-GLfloat) #f)
+            (glEnableVertexAttribArray 5)
+            (glVertexAttribPointer 5 2 GL_FLOAT GL_FALSE (* 4 sizeof-GLfloat) (integer->void* (* 2 sizeof-GLfloat)))
+            
+            (glBindVertexArray 0)
+            (glBindBuffer GL_ARRAY_BUFFER 0)
 
             ;; Game loop
             (let* ((event (make-SDL_Event))
@@ -183,14 +210,15 @@ end-of-shader
                    (glClearColor 1.0 0.2 0.0 0.0)
                    (glClear GL_COLOR_BUFFER_BIT)
 
+                   (glActiveTexture (+ GL_TEXTURE0 texture-unit))
+                   (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
+                   (glBindSampler texture-unit (*->GLuint sampler-id*))
+
+                   (glBindVertexArray (*->GLuint main-vao-id*))
                    (glUseProgram shader-program)
-                   
-                   (glBindBuffer GL_ARRAY_BUFFER (*->GLuint position-buffer-object-id*))
-                   (glEnableVertexAttribArray 0)
-                   (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f)
                    (glDrawArrays GL_TRIANGLES 0 3)
                    
-                   (glDisableVertexAttribArray 0)
+                   (glBindVertexArray 0)
                    (glUseProgram 0)
                    
                    (SDL_GL_SwapWindow win)

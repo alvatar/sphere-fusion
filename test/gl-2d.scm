@@ -8,44 +8,56 @@
 (##import opengl: gl version: (debug))
 
 
-;;; make-matrix creates a matrix (a vector of vectors).
+;;! make-matrix creates a matrix (a vector of vectors).
 (define (make-matrix rows columns)
   (do ((m (make-vector rows))
        (i 0 (+ i 1)))
       ((= i rows) m)
     (vector-set! m i (make-vector columns)))) 
 
-;;; matrix? checks to see if its argument is a matrix.
-;;; It isn't foolproof, but it's generally good enough.
+;;! matrix? checks to see if its argument is a matrix.
+;;! It isn't foolproof, but it's generally good enough.
 (define (matrix? x)
   (and (vector? x)
        (> (vector-length x) 0)
        (vector? (vector-ref x 0)))) 
 
-;; matrix-rows returns the number of rows in a matrix.
+;;! matrix-rows returns the number of rows in a matrix.
 (define (matrix-rows x)
   (vector-length x)) 
 
-;; matrix-columns returns the number of columns in a matrix.
+;;! matrix-columns returns the number of columns in a matrix.
 (define (matrix-columns x)
   (vector-length (vector-ref x 0))) 
 
-;;; matrix-ref returns the jth element of the ith row.
+;;! matrix-ref returns the jth element of the ith row.
 (define (matrix-ref m i j)
   (vector-ref (vector-ref m i) j)) 
 
-;;; matrix-set! changes the jth element of the ith row.
+;;! matrix-set! changes the jth element of the ith row.
 (define (matrix-set! m i j x)
   (vector-set! (vector-ref m i) j x)) 
 
-;;; mul is the generic matrix/scalar multiplication procedure
+;;! map for matrices
+(define (matrix:map f m)
+  (let* ((nr (matrix-rows m))
+         (nc (matrix-columns m))
+         (r (make-matrix nr nc)))
+    (do ((i 0 (+ i 1)))
+        ((= i nr) r)
+      (do ((j 0 (+ j 1)))
+          ((= j nc))
+        (matrix-set! r i j
+                     (f (matrix-ref m i j)))))))
+
+;;! * is the generic matrix/scalar multiplication procedure
 (define (matrix:* x y)
   ;; mat-sca-mul multiplies a matrix by a scalar.
   (define mat-sca-mul
     (lambda (m x)
       (let* ((nr (matrix-rows m))
              (nc (matrix-columns m))
-             (r  (make-matrix nr nc)))
+             (r (make-matrix nr nc)))
         (do ((i 0 (+ i 1)))
             ((= i nr) r)
           (do ((j 0 (+ j 1)))
@@ -101,6 +113,12 @@
      ((matrix? y) (mat-mat-mul x y))
      (else (type-error y))))
    (else (type-error x))))
+
+(define (make-identity-matrix)
+  '#(#(1 0 0 0)
+     #(0 1 0 0)
+     #(0 0 1 0)
+     #(0 0 0 1)))
 
 (define (make-translation-matrix x y z)
   `#(#(1 0 0 ,x)
@@ -175,7 +193,7 @@
            0
            1)))))
 
-(step)
+
 
 
 
@@ -205,6 +223,8 @@ layout(location = 0) in vec2 position;
 layout(location = 5) in vec2 texCoord;
 
 out vec2 colorCoord;
+
+uniform mat4 perspectiveMatrix;
 
 void main()
 {
@@ -300,7 +320,8 @@ end-of-shader
           (glScissor 0 0 screen-width screen-height)
 
           ;; Generate programs, buffers, textures
-          (let* ((position-buffer-object-id* (make-GLuint* 1))
+          (let* ((perspective-matrix (make-identity-matrix))
+                 (position-buffer-object-id* (make-GLuint* 1))
                  (main-vao-id* (make-GLuint* 1))
                  (surface-id* (make-GLuint* 1))
                  (texture-id* (make-GLuint* 1))
@@ -332,6 +353,11 @@ end-of-shader
             (SDL_FreeSurface texture-image*)
 
             (glUseProgram shader-program)
+            (glUniformMatrix4fv (glGetUniformLocation shader-program "perspectiveMatrix")
+                                1 GL_FALSE
+                                (matrix->GLfloat*
+                                 (matrix:map exact->inexact
+                                             perspective-matrix)))
             (glUniform1i (glGetUniformLocation shader-program "colorTexture") texture-unit)
             (glUseProgram 0)
             

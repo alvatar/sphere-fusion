@@ -3,10 +3,8 @@
 
 (##import-include core: base-macros)
 (##import-include core: assert-macros)
-(##import sdl2: sdl2 version: (debug))
-(##import cairo: cairo version: (debug))
-(##import opengl: gl version: (debug))
 (##import math: matrix)
+(##import fusion: core)
 
 (define vertex-shader #<<end-of-shader
 
@@ -42,44 +40,6 @@ void main()
 
 end-of-shader
 )
-
-(define (fusion:create-shader shader-type shader-code)
-  (let ((shader-id (glCreateShader shader-type))
-        (shader-status* (make-GLint* 1)))
-    (glShaderSource shader-id 1 (list shader-code) #f)
-    (glCompileShader shader-id)
-    (glGetShaderiv shader-id GL_COMPILE_STATUS shader-status*)
-    (if (= GL_FALSE (*->GLint shader-status*))
-        (let ((info-log-length* (make-GLint* 1)))
-          (glGetShaderiv shader-id GL_INFO_LOG_LENGTH info-log-length*)
-          (let* ((info-log-length (*->GLint info-log-length*))
-                 (info-log* (make-GLchar* info-log-length)))
-            (glGetShaderInfoLog shader-id info-log-length #f info-log*)
-            (error (string-append "GL Shading Language compilation -- " (char*->string info-log*))))
-          ;;(free info-log-length*)
-          ;;(free info-log*)
-          ))
-    ;;(free shader-status*)
-    shader-id))
-
-(define (fusion:create-program shaders)
-  (let ((program-id (glCreateProgram))
-        (program-status* (make-GLint* 1)))
-   (for-each (lambda (s) (glAttachShader program-id s)) shaders)
-   (glLinkProgram program-id)
-   (glGetProgramiv program-id GL_LINK_STATUS program-status*)
-   (if (= GL_FALSE (*->GLint program-status*))
-       (let ((info-log-length* (make-GLint* 1)))
-         (glGetShaderiv shader-id GL_INFO_LOG_LENGTH info-log-length*)
-         (let* ((info-log-length (*->GLint info-log-length*))
-                (info-log* (make-GLchar* info-log-length)))
-           (glGetShaderInfoLog shader-id info-log-length #f info-log*)
-           (error (string-append "GL Shading Language linkage -- " (char*->string info-log*))))
-         ;;(free info-log-length*)
-         ;;(free info-log*)
-         ))
-   (for-each (lambda (s) (glDetachShader program-id s)) shaders)
-   program-id))
 
 (define main
   (lambda (config)
@@ -120,12 +80,12 @@ end-of-shader
                  (texture-id* (make-GLuint* 1))
                  (texture-unit 0)
                  (sampler-id* (make-GLuint* 1))
-                 (vertex-data-vector '#(
-                                        50.0 50.0 0.0 0.0
-                                        150.0 50.0 0.0 1.0
-                                        150.0 100.0 1.0 1.0
-                                        50.0 100.0 1.0 0.0))
-                 (vertex-data (vector->GLfloat* vertex-data-vector))
+                 (vertex-data-vector '#f32(
+                                           50.0 50.0 0.0 0.0
+                                           150.0 50.0 0.0 1.0
+                                           150.0 100.0 1.0 1.0
+                                           50.0 100.0 1.0 0.0))
+                 (vertex-data (f32vector->GLfloat* vertex-data-vector))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders))
@@ -170,7 +130,7 @@ end-of-shader
               ;; Upload buffer
               (glBindBuffer GL_ARRAY_BUFFER position-buffer-object-id)
               (glBufferData GL_ARRAY_BUFFER
-                            (* (vector-length vertex-data-vector) sizeof-GLfloat)
+                            (* (f32vector-length vertex-data-vector) GLfloat-size)
                             (*->void* vertex-data)
                             GL_STATIC_DRAW)
               ;; Create VAO
@@ -179,9 +139,9 @@ end-of-shader
               (glBindBuffer GL_ARRAY_BUFFER position-buffer-object-id)
               
               (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 sizeof-GLfloat) #f)
+              (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
               (glEnableVertexAttribArray 5)
-              (glVertexAttribPointer 5 2 GL_FLOAT GL_FALSE (* 4 sizeof-GLfloat) (integer->void* (* 2 sizeof-GLfloat)))
+              (glVertexAttribPointer 5 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
               
               (glBindBuffer GL_ARRAY_BUFFER 0)
               (glBindVertexArray 0))

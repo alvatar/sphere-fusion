@@ -9,4 +9,8 @@
    (energy: error-code)
    (energy: functional)
    (energy: program-arguments)
-   (energy: template))))
+   (energy: template)))
+ (core
+  (load
+   (opengl: gl)
+   (sdl2: sdl2))))

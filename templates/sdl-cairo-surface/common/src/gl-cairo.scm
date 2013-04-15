@@ -123,7 +123,7 @@
           (glEnableClientState GL_VERTEX_ARRAY)
           (glEnableClientState GL_TEXTURE_COORD_ARRAY)
           (let* ((vertex-pointer (->void* coords))
-                 (texcoords-pointer (void*-offset vertex-pointer
+                 (texcoords-pointer (*-offset vertex-pointer
                                                   (* 2 sizeof-GLfloat))))
             (glVertexPointer 2 GL_FLOAT vertex-size vertex-pointer)
             (glTexCoordPointer 2 GL_FLOAT vertex-size texcoords-pointer)

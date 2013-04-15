@@ -183,7 +183,7 @@ end-of-shader
                    
                    (SDL_GL_SwapWindow win)
                    (main-loop))))
-                                        ;(free (*->void* event*))
+              (free (*->void* event*))
               (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
               (SDL_GL_DeleteContext ctx)
               (SDL_DestroyWindow win)

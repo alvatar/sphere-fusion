@@ -30,7 +30,7 @@
 
 (define-task test ()
   ;(sake:test 'gl-cairo-surface)
-  (sake:test 'gl-2d))
+  (sake:test 'gl-2d-v2.1))
 
 (define-task all (compile install)
   'all)

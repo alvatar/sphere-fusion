@@ -8,9 +8,9 @@
 
 (define vertex-shader #<<end-of-shader
 
-#version 330
-layout(location = 0) in vec2 position;
-layout(location = 5) in vec2 texCoord;
+#version 130
+in vec2 position;
+in vec2 texCoord;
 
 out vec2 colorCoord;
 
@@ -18,8 +18,8 @@ uniform mat4 perspectiveMatrix;
 
 void main()
 {
-  gl_Position = perspectiveMatrix * vec4(position, 0.0, 1.0);
   colorCoord = texCoord;
+  gl_Position = perspectiveMatrix * vec4(position, 0.0, 1.0);
 }
 
 end-of-shader
@@ -27,15 +27,14 @@ end-of-shader
 
 (define fragment-shader #<<end-of-shader
    
-#version 330
+#version 130
 
 in vec2 colorCoord;
 uniform sampler2D colorTexture;
-out vec4 outputColor;
 
 void main()
 {
-  outputColor = texture(colorTexture, colorCoord);
+  gl_FragColor = texture2D(colorTexture, colorCoord);
 }
 
 end-of-shader
@@ -139,10 +138,14 @@ end-of-shader
               (glBindVertexArray (*->GLuint main-vao-id*))
               (glBindBuffer GL_ARRAY_BUFFER position-buffer-object-id)
               
-              (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
-              (glEnableVertexAttribArray 5)
-              (glVertexAttribPointer 5 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
+              (let ((position-attr (glGetAttribLocation shader-program "position"))
+                    (texture-coordinates-attr (glGetAttribLocation shader-program "texCoord")))
+                (glEnableVertexAttribArray position-attr)
+                (glVertexAttribPointer position-attr 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+                (glEnableVertexAttribArray texture-coordinates-attr)
+                (glVertexAttribPointer texture-coordinates-attr 2
+                                       GL_FLOAT GL_FALSE
+                                       (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size))))
               
               (glBindBuffer GL_ARRAY_BUFFER 0)
               (glBindVertexArray 0))

@@ -46,8 +46,8 @@ end-of-shader
   (lambda (config)
     (let ((init-screen-width (cadr (memq 'width: config)))
           (init-screen-height (cadr (memq 'height: config)))
-          (screen-width* (make-int* 1))
-          (screen-height* (make-int* 1)))
+          (screen-width* (alloc-int* 1))
+          (screen-height* (alloc-int* 1)))
       (when (< (SDL_Init SDL_INIT_VIDEO) 0) report: (fusion:error "Couldn't initialize SDL!"))
       ;; SDL
       (let ((win (SDL_CreateWindow
@@ -75,12 +75,12 @@ end-of-shader
           (let* ((perspective-matrix (matrix:* (make-translation-matrix -1.0 1.0 0.0)
                                                (matrix:* (make-scaling-matrix (/ 2.0 screen-width) (/ -2.0 screen-height) 1.0)
                                                          (make-identity-matrix))))
-                 (position-buffer-object-id* (make-GLuint* 1))
-                 (main-vao-id* (make-GLuint* 1))
-                 (surface-id* (make-GLuint* 1))
-                 (texture-id* (make-GLuint* 1))
+                 (position-buffer-object-id* (alloc-GLuint* 1))
+                 (main-vao-id* (alloc-GLuint* 1))
+                 (surface-id* (alloc-GLuint* 1))
+                 (texture-id* (alloc-GLuint* 1))
                  (texture-unit 0)
-                 (sampler-id* (make-GLuint* 1))
+                 (sampler-id* (alloc-GLuint* 1))
                  (vertex-data-vector '#f32(
                                            50.0 50.0 0.0 0.0
                                            150.0 50.0 0.0 1.0
@@ -133,7 +133,7 @@ end-of-shader
               (glBufferData GL_ARRAY_BUFFER
                             (* (f32vector-length vertex-data-vector) GLfloat-size)
                             (*->void* vertex-data)
-                            GL_STATIC_DRAW)
+                            GL_DYNAMIC_DRAW)
               ;; Create VAO
               (glGenVertexArrays 1 main-vao-id*)
               (glBindVertexArray (*->GLuint main-vao-id*))

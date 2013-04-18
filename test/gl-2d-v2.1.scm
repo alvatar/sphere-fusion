@@ -1,5 +1,5 @@
 ;;; Copyright (c) 2013 by Álvaro Castro Castilla
-;;; Test for 2d and texturing with OpenGL
+;;; Test for 2d and texturing with OpenGL 2.1
 
 (##import-include core: base-macros)
 (##import-include core: assert-macros)
@@ -45,8 +45,8 @@ end-of-shader
   (lambda (config)
     (let ((init-screen-width (cadr (memq 'width: config)))
           (init-screen-height (cadr (memq 'height: config)))
-          (screen-width* (make-int* 1))
-          (screen-height* (make-int* 1)))
+          (screen-width* (alloc-int* 1))
+          (screen-height* (alloc-int* 1)))
       (when (< (SDL_Init SDL_INIT_VIDEO) 0) report: (fusion:error "Couldn't initialize SDL!"))
       ;; SDL
       (let ((win (SDL_CreateWindow
@@ -64,6 +64,7 @@ end-of-shader
           (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
           ;; OpenGL
           (SDL_Log (string-append "OpenGL Version: " (unsigned-char*->string (glGetString GL_VERSION))))
+          (SDL_Log "Using API OpenGL Version: 2.1 - GL Shading Language Version: 1.2")
           ;; Glew: initialize extensions
           (glewInit)
           ;; OpenGL viewport
@@ -74,17 +75,18 @@ end-of-shader
           (let* ((perspective-matrix (matrix:* (make-translation-matrix -1.0 1.0 0.0)
                                                (matrix:* (make-scaling-matrix (/ 2.0 screen-width) (/ -2.0 screen-height) 1.0)
                                                          (make-identity-matrix))))
-                 (position-buffer-object-id* (make-GLuint* 1))
-                 (main-vao-id* (make-GLuint* 1))
-                 (surface-id* (make-GLuint* 1))
-                 (texture-id* (make-GLuint* 1))
+                 (position-buffer-object-id* (alloc-GLuint* 1))
+                 (main-vao-id* (alloc-GLuint* 1))
+                 (surface-id* (alloc-GLuint* 1))
+                 (texture-id* (alloc-GLuint* 1))
                  (texture-unit 0)
-                 (sampler-id* (make-GLuint* 1))
+                 (sampler-id* (alloc-GLuint* 1))
                  (vertex-data-vector '#f32(
                                            50.0 50.0 0.0 0.0
                                            150.0 50.0 0.0 1.0
                                            150.0 100.0 1.0 1.0
                                            50.0 100.0 1.0 0.0))
+                 ;;;;; TODO!!!!!!!!!!! This shouldn't be malloc'ed, should be cast
                  (vertex-data (f32vector->GLfloat* vertex-data-vector))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
@@ -131,8 +133,8 @@ end-of-shader
               (glBindBuffer GL_ARRAY_BUFFER position-buffer-object-id)
               (glBufferData GL_ARRAY_BUFFER
                             (* (f32vector-length vertex-data-vector) GLfloat-size)
-                            (*->void* vertex-data)
-                            GL_STATIC_DRAW)
+                            vertex-data
+                            GL_DYNAMIC_DRAW)
               ;; Create VAO
               (glGenVertexArrays 1 main-vao-id*)
               (glBindVertexArray (*->GLuint main-vao-id*))
@@ -148,50 +150,72 @@ end-of-shader
                                        (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size))))
               
               (glBindBuffer GL_ARRAY_BUFFER 0)
-              (glBindVertexArray 0))
+              (glBindVertexArray 0)
 
-            ;; Game loop
-            (let* ((event (make-SDL_Event))
-                   (event* (SDL_Event-pointer event)))
-              (call/cc
-               (lambda (quit)
-                 (let main-loop ()
-                   (let event-loop ()
-                     (when (= 1 (SDL_PollEvent event*))
-                           (let ((event-type (SDL_Event-type event)))
-                             (cond
-                              ((= event-type SDL_KEYDOWN)
-                               (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Key down")
-                               (let* ((kevt (SDL_Event-key event))
-                                      (key (SDL_Keysym-sym
-                                            (SDL_KeyboardEvent-keysym kevt))))
-                                 (cond ((= key SDLK_ESCAPE)
-                                        (quit))
-                                       (else
-                                        (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
-                              (else #f)))
-                           (event-loop)))
-                   (glClearColor 1.0 0.2 0.0 0.0)
-                   (glClear GL_COLOR_BUFFER_BIT)
+              ;; Game loop
+              (let* ((event (make-SDL_Event))
+                     (event* (SDL_Event-pointer event)))
+                (call/cc
+                 (lambda (quit)
+                   (let main-loop ()
+                     (let event-loop ()
+                       (when (= 1 (SDL_PollEvent event*))
+                             (let ((event-type (SDL_Event-type event)))
+                               (cond
+                                ((= event-type SDL_KEYDOWN)
+                                 (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Key down")
+                                 (let* ((kevt (SDL_Event-key event))
+                                        (key (SDL_Keysym-sym
+                                              (SDL_KeyboardEvent-keysym kevt))))
+                                   (cond ((= key SDLK_ESCAPE)
+                                          (quit))
+                                         (else
+                                          (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
+                                (else #f)))
+                             (event-loop)))
 
-                   (glActiveTexture (+ GL_TEXTURE0 texture-unit))
-                   (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-                   (glBindSampler texture-unit (*->GLuint sampler-id*))
+                     ;; -- Game logic --
+                     (let ((GLfloat*-increment
+                            (lambda (n x) (GLfloat*-set! vertex-data n (+ (GLfloat*-ref vertex-data n) x)))))
+                       (GLfloat*-increment 0 1.0)
+                       (GLfloat*-increment 1 1.0)
+                       (GLfloat*-increment 4 1.0)
+                       (GLfloat*-increment 5 1.0)
+                       (GLfloat*-increment 8 1.0)
+                       (GLfloat*-increment 9 1.0)
+                       (GLfloat*-increment 12 1.0)
+                       (GLfloat*-increment 13 1.0))
+                     
+                     ;; -- Draw --
+                     (glClearColor 1.0 0.2 0.0 0.0)
+                     (glClear GL_COLOR_BUFFER_BIT)
+                     
+                     (glActiveTexture (+ GL_TEXTURE0 texture-unit))
+                     (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
+                     (glBindSampler texture-unit (*->GLuint sampler-id*))
 
-                   (glBindVertexArray (*->GLuint main-vao-id*))
-                   (glUseProgram shader-program)
-                   (glDrawArrays GL_QUADS 0 4)
-                   
-                   (glBindVertexArray 0)
-                   (glUseProgram 0)
-                   
-                   (SDL_GL_SwapWindow win)
-                   (main-loop))))
-              (free (*->void* event*))
-              (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
-              (SDL_GL_DeleteContext ctx)
-              (SDL_DestroyWindow win)
-              (SDL_Quit))))))
+                     ;; Begin VAO
+                     (glBindVertexArray (*->GLuint main-vao-id*))
+                     ;; Update vertex data buffer
+                     (glBindBuffer GL_ARRAY_BUFFER position-buffer-object-id)
+                     (glBufferSubData GL_ARRAY_BUFFER
+                                      0
+                                      (* (f32vector-length vertex-data-vector) GLfloat-size)
+                                      vertex-data)
+                     
+                     (glUseProgram shader-program)
+                     (glDrawArrays GL_QUADS 0 4)
+                     (glUseProgram 0)
+                     (glBindVertexArray 0)
+                     ;; End VAO
+                     
+                     (SDL_GL_SwapWindow win)
+                     (main-loop))))
+                (free event*)
+                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
+                (SDL_GL_DeleteContext ctx)
+                (SDL_DestroyWindow win)
+                (SDL_Quit)))))))
     (##gc)))
 
 (main '(width: 1280 height: 752))

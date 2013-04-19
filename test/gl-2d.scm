@@ -90,8 +90,7 @@ end-of-shader
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders))
-                 (texture-image* (SDL_LoadBMP "test/128x128.bmp"))
-                 (texture-image (pointer->SDL_Surface texture-image*)))
+                 (texture-image* (SDL_LoadBMP "test/128x128.bmp")))
             ;; Clean up shaders once the program has been compiled and linked
             (for-each glDeleteShader shaders)
 
@@ -99,9 +98,9 @@ end-of-shader
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
             (glTexImage2D GL_TEXTURE_2D 0 3
-                          (SDL_Surface-w texture-image) (SDL_Surface-h texture-image)
+                          (SDL_Surface-w texture-image*) (SDL_Surface-h texture-image*)
                           0 GL_BGR GL_UNSIGNED_BYTE
-                          (SDL_Surface-pixels texture-image))
+                          (SDL_Surface-pixels texture-image*))
             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_BASE_LEVEL 0)
             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_LEVEL 0)
             (glBindTexture GL_TEXTURE_2D 0)
@@ -148,20 +147,19 @@ end-of-shader
               (glBindVertexArray 0))
 
             ;; Game loop
-            (let* ((event (make-SDL_Event))
-                   (event* (SDL_Event-pointer event)))
+            (let ((event* (alloc-SDL_Event 1)))
               (call/cc
                (lambda (quit)
                  (let main-loop ()
                    (let event-loop ()
                      (when (= 1 (SDL_PollEvent event*))
-                           (let ((event-type (SDL_Event-type event)))
+                           (let ((event-type (SDL_Event-type event*)))
                              (cond
                               ((= event-type SDL_KEYDOWN)
                                (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Key down")
-                               (let* ((kevt (SDL_Event-key event))
+                               (let* ((kevt* (SDL_Event-key event*))
                                       (key (SDL_Keysym-sym
-                                            (SDL_KeyboardEvent-keysym kevt))))
+                                            (SDL_KeyboardEvent-keysym kevt*))))
                                  (cond ((= key SDLK_ESCAPE)
                                         (quit))
                                        (else

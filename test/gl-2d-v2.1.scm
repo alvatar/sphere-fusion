@@ -8,11 +8,11 @@
 
 (define vertex-shader #<<end-of-shader
 
-#version 130
-in vec2 position;
-in vec2 texCoord;
+#version 120
+attribute vec2 position;
+attribute vec2 texCoord;
 
-out vec2 colorCoord;
+varying vec2 colorCoord;
 
 uniform mat4 perspectiveMatrix;
 
@@ -27,9 +27,9 @@ end-of-shader
 
 (define fragment-shader #<<end-of-shader
    
-#version 130
+#version 120
 
-in vec2 colorCoord;
+varying vec2 colorCoord;
 uniform sampler2D colorTexture;
 
 void main()

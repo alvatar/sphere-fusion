@@ -1,10 +1,5 @@
 ;;; Copyright (c) 2013 by Álvaro Castro Castilla
-;;; Test for 2d and texturing with OpenGL 2.1
-
-(##import-include core: base-macros)
-(##import-include core: assert-macros)
-(##import math: matrix)
-(##import fusion: core)
+;;; OpenGL 2.1 2d skeleton
 
 (define vertex-shader #<<end-of-shader
 

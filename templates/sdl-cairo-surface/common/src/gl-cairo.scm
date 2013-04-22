@@ -27,17 +27,17 @@
 (define (fusion:create-cairo-surface width height channels)
   ;; Cairo buffer
   (let ((cairo-buffer (calloc (* channels width height)
-                              sizeof-unsigned-char)))
+                              unsigned-char-size)))
     ;; POT buffer for non-supporting devices
     (let* ((pot-size (fusion:pot width height))
            (pot-buffer
             (cond-expand (mobile (calloc (* channels pot-size pot-size)
-                                           sizeof-unsigned-char))
+                                         unsigned-char-size))
                          (else #f))))
       (unless cairo-buffer (error "Unable to allocate Cairo buffer"))
       (let ((cairo-surface
              (cairo_image_surface_create_for_data
-              (void*->unsigned-char* cairo-buffer)
+              cairo-buffer
               CAIRO_FORMAT_ARGB32
               width
               height
@@ -70,6 +70,7 @@
                                                             pot-surface-data pot-size channels)))
                        (else
                         (lambda (c p) (fusion:error "Calling update-pot-texture in a npot-supporting system"))))))
+    (pp 'CHECK-POINT)
     (lambda (cairo-surface-data pot-surface-data)
       (unless cairo-surface-data
               (fusion:error "No valid surface data passed"))
@@ -96,35 +97,40 @@
             (y0 (exact->inexact y0))
             (x1 (exact->inexact (+ x0 width)))
             (y1 (exact->inexact (+ y0 height))))
+        (exit)
+        (pp x0)
+        (pp y0)
         (let ((coords
                (cond-expand
                 (mobile
                  (let ((x-tex (exact->inexact (/ width pot-size)))
                        (y-tex (exact->inexact (/ height pot-size))))
-                   (vector->GLfloat* `#(,x0 ,y1 ;; Rect coordinates
-                                            0.0 0.0 ;; Tex coordinates
-                                            ,x1 ,y1
-                                            ,x-tex 0.0
-                                            ,x1 ,y0
-                                            ,x-tex ,y-tex
-                                            ,x0 ,y0
-                                            0.0 ,y-tex))))
+                   (f32vector->GLfloat* (list->f32vector
+                                         x0 y1   ;; Rect coordinates
+                                         0.0 0.0 ;; Tex coordinates
+                                         x1 y1
+                                         x-tex 0.0
+                                         x1 y0
+                                         x-tex y-tex
+                                         x0 y0
+                                         0.0 y-tex))))
                 (else
-                 (vector->GLfloat* `#(,x0 ,y1     ;; Rect coordinates
-                                          0.0 0.0 ;; Tex coordinates
-                                          ,x1 ,y1
-                                          1.0 0.0
-                                          ,x1 ,y0
-                                          1.0 1.0
-                                          ,x0 ,y0
-                                          0.0 1.0)))))
-              (indices (vector->GLushort* '#(0 1 2 0 3 2)))
+                 (f32vector->GLfloat* (list->f32vector
+                                       x0 y1   ;; Rect coordinates
+                                       0.0 0.0 ;; Tex coordinates
+                                       x1 y1
+                                       1.0 0.0
+                                       x1 y0
+                                       1.0 1.0
+                                       x0 y0
+                                       0.0 1.0)))))
+              (indices (u16vector->GLushort* '#u16(0 1 2 0 3 2)))
               (vertex-size (* (+ 2 2) sizeof-GLfloat)))
           (glEnableClientState GL_VERTEX_ARRAY)
           (glEnableClientState GL_TEXTURE_COORD_ARRAY)
           (let* ((vertex-pointer (->void* coords))
                  (texcoords-pointer (*-offset vertex-pointer
-                                                  (* 2 sizeof-GLfloat))))
+                                              (* 2 sizeof-GLfloat))))
             (glVertexPointer 2 GL_FLOAT vertex-size vertex-pointer)
             (glTexCoordPointer 2 GL_FLOAT vertex-size texcoords-pointer)
             (glDrawElements GL_TRIANGLES 6 GL_UNSIGNED_SHORT (->void* indices)))))
@@ -152,19 +158,19 @@
                   #;
                   (bitwise-ior SDL_WINDOW_OPENGL
                                SDL_WINDOW_BORDERLESS)))
-            (screen-width* (make-int* 1))
-            (screen-height* (make-int* 1)))
+            (screen-width* (alloc-int* 1))
+            (screen-height* (alloc-int* 1)))
         (SDL_GetWindowSize win screen-width* screen-height*)
         (let ((check (if (not win) (fusion:error "Unable to create render window" (SDL_GetError))))
               (ctx (SDL_GL_CreateContext win))
-              (screen-width (pointer->int screen-width*))
-              (screen-height (pointer->int screen-height*))
+              (screen-width (*->int screen-width*))
+              (screen-height (*->int screen-height*))
               (texture-channels 4))
           (SDL_Log (object->string screen-width))
           (SDL_Log (object->string screen-height))
           ;; OpenGL
           (let* ((num-textures 1)
-                 (textures (make-GLuint* 1))
+                 (textures (alloc-GLuint* 1))
                  (render-surface (fusion:create-gl-cairo-surface-renderer
                                   (GLuint*-ref textures 0)
                                   0
@@ -172,7 +178,7 @@
                                   screen-width
                                   screen-height
                                   texture-channels)))
-            (SDL_Log (string-append "OpenGL Version: "(glGetString GL_VERSION)))
+            (SDL_Log (string-append "OpenGL Version: " (unsigned-char*->string (glGetString GL_VERSION))))
             ;; OpenGL viewport
             (glViewport 0 0 screen-width screen-height)
             (glMatrixMode GL_PROJECTION)
@@ -193,8 +199,7 @@
             (receive
              (cairo cairo-surface-data pot-surface-data)
              (fusion:create-cairo-surface screen-width screen-height texture-channels)
-             (let* ((event (make-SDL_Event))
-                    (event* (SDL_Event-pointer event)))
+             (let ((event* (alloc-SDL_Event 1)))
                (call/cc
                 (lambda (leave)
                   (let draw-loop ((current-draw-world init-input))
@@ -205,7 +210,7 @@
                                  (let event-loop ((current-events-world current-draw-world))
                                    (if (= 1 (SDL_PollEvent event*))
                                        ;; Event-handling output (the world) is fed back to event handling...
-                                       (let ((handle-event-output (handle-event event current-events-world)))
+                                       (let ((handle-event-output (handle-event event* current-events-world)))
                                          (when (eq? handle-event-output 'exit)
                                                (leave))
                                          (event-loop handle-event-output))
@@ -214,6 +219,8 @@
                       (glClearColor 1.0 0.0 0.0 1.0)
                       (glClear GL_COLOR_BUFFER_BIT)
                       (render-surface cairo-surface-data pot-surface-data)
+                      (pp '***********************)
+
                       (SDL_GL_SwapWindow win)
                       (draw-loop draw-output-world)))))
                (free (->void* event*))

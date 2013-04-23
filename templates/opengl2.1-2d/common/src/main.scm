@@ -195,7 +195,7 @@ end-of-shader
                                     vertex-data)
                    
                    (glUseProgram shader-program)
-                   (glDrawArrays GL_QUADS 0 4)
+                   (glDrawArrays GL_QUADS 0 (/ (f32vector-length vertex-data-vector) 4))
                    (glUseProgram 0)
                    (glBindVertexArray 0)
                    ;; End VAO

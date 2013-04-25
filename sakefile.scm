@@ -29,7 +29,7 @@
   (sake:default-clean))
 
 (define-task test ()
-  (sake:test 'opengl4.0-2d))
+  (sake:test 'opengl2.1-2d))
 
 (define-task all (compile install)
   'all)

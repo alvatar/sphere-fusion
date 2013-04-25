@@ -4,6 +4,7 @@
 (##import-include core: base-macros)
 (##import-include core: assert-macros)
 (##import math: matrix)
+(##import sdl2: sdl2-image)
 (##import fusion: core)
 
 (define vertex-shader #<<end-of-shader
@@ -81,30 +82,41 @@ end-of-shader
                  (texture-id* (alloc-GLuint* 1))
                  (texture-unit 0)
                  (sampler-id* (alloc-GLuint* 1))
-                 (vertex-data-vector '#f32(
+                 (vertex-data-vector '#f32( ;; Moving Kake
                                            50.0 50.0 0.0 0.0
-                                           150.0 50.0 0.0 1.0
-                                           150.0 100.0 1.0 1.0
-                                           50.0 100.0 1.0 0.0))
+                                           306.0 50.0 1.0 0.0
+                                           306.0 306.0 1.0 1.0
+                                           50.0 306.0 0.0 1.0
+                                           ;; Still Jake
+                                           50.0 50.0 0.0 0.0
+                                           306.0 50.0 1.0 0.0
+                                           306.0 306.0 1.0 1.0
+                                           50.0 306.0 0.0 1.0
+                                           ))
                  (vertex-data (f32vector->GLfloat* vertex-data-vector))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders))
-                 (texture-image* (SDL_LoadBMP "test/128x128.bmp")))
+                 (texture-image* (IMG_Load "test/jake_the_dog.png")))
             ;; Clean up shaders once the program has been compiled and linked
             (for-each glDeleteShader shaders)
 
             ;; Texture
+            (unless texture-image* (fusion:error (string-append
+                                                  "Unable to load texture image -- "
+                                                  (IMG_GetError))))
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-            (glTexImage2D GL_TEXTURE_2D 0 3
+            (glTexImage2D GL_TEXTURE_2D 0 4
                           (SDL_Surface-w texture-image*) (SDL_Surface-h texture-image*)
-                          0 GL_BGR GL_UNSIGNED_BYTE
+                          0 GL_RGBA GL_UNSIGNED_BYTE
                           (SDL_Surface-pixels texture-image*))
             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_BASE_LEVEL 0)
             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_LEVEL 0)
             (glBindTexture GL_TEXTURE_2D 0)
             (SDL_FreeSurface texture-image*)
+            (glEnable GL_BLEND)
+            (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
 
             ;; Uniforms
             (glUseProgram shader-program)
@@ -175,16 +187,12 @@ end-of-shader
                      (let ((GLfloat*-increment
                             (lambda (n x) (GLfloat*-set! vertex-data n (+ (GLfloat*-ref vertex-data n) x)))))
                        (GLfloat*-increment 0 1.0)
-                       (GLfloat*-increment 1 1.0)
                        (GLfloat*-increment 4 1.0)
-                       (GLfloat*-increment 5 1.0)
                        (GLfloat*-increment 8 1.0)
-                       (GLfloat*-increment 9 1.0)
-                       (GLfloat*-increment 12 1.0)
-                       (GLfloat*-increment 13 1.0))
+                       (GLfloat*-increment 12 1.0))
                      
                      ;; -- Draw --
-                     (glClearColor 1.0 0.2 0.0 0.0)
+                     (glClearColor 0.9 0.5 0.1 0.0)
                      (glClear GL_COLOR_BUFFER_BIT)
                      
                      (glActiveTexture (+ GL_TEXTURE0 texture-unit))
@@ -201,7 +209,7 @@ end-of-shader
                                       vertex-data)
                      
                      (glUseProgram shader-program)
-                     (glDrawArrays GL_QUADS 0 4)
+                     (glDrawArrays GL_QUADS 0 (/ (f32vector-length vertex-data-vector) 4))
                      (glUseProgram 0)
                      (glBindVertexArray 0)
                      ;; End VAO

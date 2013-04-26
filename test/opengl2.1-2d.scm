@@ -126,11 +126,13 @@ end-of-shader
                  (sound-chunk* (or (Mix_LoadWAV "test/assets/jake.wav")
                                    (fusion:error (string-append "Unable to load WAV chunk -- " (Mix_GetError))))))
 
-            (SDL_SetSurfaceBlendMode text-surface* SDL_BLENDMODE_NONE)
-            (SDL_BlitSurface text-surface* #f texture-surface* #f)
             ;; Clean up shaders once the program has been compiled and linked
             (for-each glDeleteShader shaders)
 
+            ;; Blit the text surface
+            (SDL_SetSurfaceBlendMode text-surface* SDL_BLENDMODE_NONE)
+            (SDL_BlitSurface text-surface* #f texture-surface* #f)
+            
             ;; Texture
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))

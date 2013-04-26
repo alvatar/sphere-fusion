@@ -73,6 +73,9 @@ end-of-shader
           ;; OpenGL viewport
           (glViewport 0 0 screen-width screen-height)
           (glScissor 0 0 screen-width screen-height)
+          ;; SDL TTF
+          (unless (= (TTF_Init) 0)
+                  (fusion:error (string-append "Unable to initialize True Type Fonts system -- " (TTF_GetError))))
           ;; SDL Mixer
           (unless (Mix_OpenAudio MIX_DEFAULT_FREQUENCY MIX_DEFAULT_FORMAT 2 4096)
                   (fusion:error (string-append "Unable to initialize sound system -- " (MIX_GetError))))
@@ -87,27 +90,44 @@ end-of-shader
                  (texture-id* (alloc-GLuint* 1))
                  (texture-unit 0)
                  (sampler-id* (alloc-GLuint* 1))
-                 (vertex-data-vector '#f32( ;; Moving Kake
-                                           50.0 50.0 0.0 0.0
-                                           306.0 50.0 1.0 0.0
+                 (vertex-data-vector '#f32( ;; Moving Jake
+                                           50.0 50.0 0.5 0.5
+                                           306.0 50.0 1.0 0.5
                                            306.0 306.0 1.0 1.0
-                                           50.0 306.0 0.0 1.0
+                                           50.0 306.0 0.5 1.0
+                                           ;; Text
+                                           50.0 35.0 0.0 0.0
+                                           306.0 35.0 .5 0.0
+                                           306.0 291.0 .5 .5
+                                           50.0 291.0 0.0 .5
                                            ;; Still Jake
-                                           50.0 50.0 0.0 0.0
-                                           306.0 50.0 1.0 0.0
+                                           50.0 50.0 0.5 0.5
+                                           306.0 50.0 1.0 0.5
                                            306.0 306.0 1.0 1.0
-                                           50.0 306.0 0.0 1.0
+                                           50.0 306.0 0.5 1.0
                                            ))
                  (vertex-data (f32vector->GLfloat* vertex-data-vector))
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders))
-                 (texture-image* (or (IMG_Load "test/assets/jake_the_dog.png")
-                                     (fusion:error (string-append "Unable to load texture image -- " (IMG_GetError)))))
-                 (background-music (or (Mix_LoadMUS "test/assets/pan073-blunderspublik-2-elastic_modulus.ogg")
-                                       (fusion:error (string-append "Unable to load OGG music -- " (Mix_GetError)))))
-                 (sound-chunk (or (Mix_LoadWAV "test/assets/jake.wav")
-                                  (fusion:error (string-append "Unable to load WAV chunk -- " (Mix_GetError))))))
+                 (texture-surface* (or (IMG_Load "test/assets/jake_the_dog.png")
+                                       (fusion:error (string-append "Unable to load texture image -- " (IMG_GetError)))))
+                 (main-font-color* (let ((color (alloc-SDL_Color)))
+                                     (SDL_Color-r-set! color 0)
+                                     (SDL_Color-g-set! color 0)
+                                     (SDL_Color-b-set! color 120)
+                                     color))
+                 (main-font* (or (TTF_OpenFont "test/assets/verdana.ttf" 20)
+                                 (fusion:error (string-append "Unable to load TTF font -- " (TTF_GetError)))))
+                 (text-surface* (or (TTF_RenderUTF8_Blended main-font* "...duuude, I'm thinking!" (*->SDL_Color main-font-color*))
+                                    (fusion:error (string-append "Unable to render TTF font surface -- " (TTF_GetError)))))
+                 (background-music* (or (Mix_LoadMUS "test/assets/pan073-blunderspublik-2-elastic_modulus.ogg")
+                                        (fusion:error (string-append "Unable to load OGG music -- " (Mix_GetError)))))
+                 (sound-chunk* (or (Mix_LoadWAV "test/assets/jake.wav")
+                                   (fusion:error (string-append "Unable to load WAV chunk -- " (Mix_GetError))))))
+
+            (SDL_SetSurfaceBlendMode text-surface* SDL_BLENDMODE_NONE)
+            (SDL_BlitSurface text-surface* #f texture-surface* #f)
             ;; Clean up shaders once the program has been compiled and linked
             (for-each glDeleteShader shaders)
 
@@ -115,13 +135,13 @@ end-of-shader
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
             (glTexImage2D GL_TEXTURE_2D 0 4
-                          (SDL_Surface-w texture-image*) (SDL_Surface-h texture-image*)
+                          (SDL_Surface-w texture-surface*) (SDL_Surface-h texture-surface*)
                           0 GL_RGBA GL_UNSIGNED_BYTE
-                          (SDL_Surface-pixels texture-image*))
+                          (SDL_Surface-pixels texture-surface*))
             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_BASE_LEVEL 0)
             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAX_LEVEL 0)
             (glBindTexture GL_TEXTURE_2D 0)
-            (SDL_FreeSurface texture-image*)
+            (SDL_FreeSurface texture-surface*)
             (glEnable GL_BLEND)
             (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
 
@@ -170,7 +190,7 @@ end-of-shader
               (glBindVertexArray 0)
 
               ;; Play Music
-              (unless (Mix_PlayMusic background-music -1)
+              (unless (Mix_PlayMusic background-music* -1)
                       (fusion:error (string-append "Unable to play OGG music -- " (Mix_GetError))))
               
               ;; Game loop
@@ -183,20 +203,20 @@ end-of-shader
                              (let ((event-type (SDL_Event-type event*)))
                                (cond
                                 ((= event-type SDL_MOUSEBUTTONDOWN)
-                                 (Mix_PlayChannel 1 sound-chunk 0))
+                                 (Mix_PlayChannel 1 sound-chunk* 0))
                                 ((= event-type SDL_KEYDOWN)
                                  (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Key down")
                                  (error "C FFI error: Union")
                                  #;
                                  (let* ((kevt* (SDL_Event-key event*))
-                                        #;
-                                        (key (SDL_Keysym-sym
-                                        (SDL_KeyboardEvent-keysym kevt*))))
-                                   
-                                   (cond ((= key SDLK_ESCAPE)
-                                          (quit))
-                                         (else
-                                          (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
+                                 #;
+                                 (key (SDL_Keysym-sym
+                                 (SDL_KeyboardEvent-keysym kevt*))))
+                                 
+                                 (cond ((= key SDLK_ESCAPE)
+                                 (quit))
+                                 (else
+                                 (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
                                 (else #f)))
                              (event-loop)))
 
@@ -238,9 +258,9 @@ end-of-shader
                 (SDL_GL_DeleteContext ctx)
                 (SDL_DestroyWindow win)
                 ;; Cleanup audio subsystem
-                (Mix_FreeMusic background-music)
-                (Mix_FreeChunk sound-chunk)
+                (Mix_FreeMusic background-music*)
+                (Mix_FreeChunk sound-chunk*)
                 (SDL_Quit)))))))
-    (##gc)))
+      (##gc)))
 
-(main '(width: 1280 height: 752))
+  (main '(width: 1280 height: 752))

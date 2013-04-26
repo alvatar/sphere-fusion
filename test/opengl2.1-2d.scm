@@ -5,6 +5,8 @@
 (##import-include core: assert-macros)
 (##import math: matrix)
 (##import sdl2: sdl2-image)
+(##import sdl2: sdl2-mixer)
+(##import sdl2: sdl2-ttf)
 (##import fusion: core)
 
 (define vertex-shader #<<end-of-shader
@@ -51,7 +53,7 @@ end-of-shader
       (when (< (SDL_Init SDL_INIT_VIDEO) 0) report: (fusion:error "Couldn't initialize SDL!"))
       ;; SDL
       (let ((win (SDL_CreateWindow
-                  ""
+                  "OpenGL2.1/GLSL1.2 | SDL Audio | SDL Mixer"
                   SDL_WINDOWPOS_CENTERED
                   SDL_WINDOWPOS_CENTERED
                   (cond-expand (mobile 0) (else init-screen-width))
@@ -71,6 +73,9 @@ end-of-shader
           ;; OpenGL viewport
           (glViewport 0 0 screen-width screen-height)
           (glScissor 0 0 screen-width screen-height)
+          ;; SDL Mixer
+          (unless (Mix_OpenAudio MIX_DEFAULT_FREQUENCY MIX_DEFAULT_FORMAT 2 4096)
+                  (fusion:error (string-append "Unable to initialize sound system -- " (MIX_GetError))))
 
           ;; Generate programs, buffers, textures
           (let* ((perspective-matrix (matrix:* (make-translation-matrix -1.0 1.0 0.0)
@@ -97,14 +102,16 @@ end-of-shader
                  (shaders (list (fusion:create-shader GL_VERTEX_SHADER vertex-shader)
                                 (fusion:create-shader GL_FRAGMENT_SHADER fragment-shader)))
                  (shader-program (fusion:create-program shaders))
-                 (texture-image* (IMG_Load "test/jake_the_dog.png")))
+                 (texture-image* (or (IMG_Load "test/assets/jake_the_dog.png")
+                                     (fusion:error (string-append "Unable to load texture image -- " (IMG_GetError)))))
+                 (background-music (or (Mix_LoadMUS "test/assets/pan073-blunderspublik-2-elastic_modulus.ogg")
+                                       (fusion:error (string-append "Unable to load OGG music -- " (Mix_GetError)))))
+                 (sound-chunk (or (Mix_LoadWAV "test/assets/jake.wav")
+                                  (fusion:error (string-append "Unable to load WAV chunk -- " (Mix_GetError))))))
             ;; Clean up shaders once the program has been compiled and linked
             (for-each glDeleteShader shaders)
 
             ;; Texture
-            (unless texture-image* (fusion:error (string-append
-                                                  "Unable to load texture image -- "
-                                                  (IMG_GetError))))
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
             (glTexImage2D GL_TEXTURE_2D 0 4
@@ -133,8 +140,8 @@ end-of-shader
             (let ((sampler-id (*->GLuint sampler-id*)))
               (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
               (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-              (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
-              (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST))
+              (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_LINEAR)
+              (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_LINEAR))
                         	            
             ;; Vertex Array Object
             (glGenBuffers 1 position-buffer-object-id*)
@@ -162,6 +169,10 @@ end-of-shader
               (glBindBuffer GL_ARRAY_BUFFER 0)
               (glBindVertexArray 0)
 
+              ;; Play Music
+              (unless (Mix_PlayMusic background-music -1)
+                      (fusion:error (string-append "Unable to play OGG music -- " (Mix_GetError))))
+              
               ;; Game loop
               (let ((event* (alloc-SDL_Event)))
                 (call/cc
@@ -171,11 +182,17 @@ end-of-shader
                        (when (= 1 (SDL_PollEvent event*))
                              (let ((event-type (SDL_Event-type event*)))
                                (cond
+                                ((= event-type SDL_MOUSEBUTTONDOWN)
+                                 (Mix_PlayChannel 1 sound-chunk 0))
                                 ((= event-type SDL_KEYDOWN)
                                  (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Key down")
+                                 (error "C FFI error: Union")
+                                 #;
                                  (let* ((kevt* (SDL_Event-key event*))
+                                        #;
                                         (key (SDL_Keysym-sym
-                                              (SDL_KeyboardEvent-keysym kevt*))))
+                                        (SDL_KeyboardEvent-keysym kevt*))))
+                                   
                                    (cond ((= key SDLK_ESCAPE)
                                           (quit))
                                          (else
@@ -186,10 +203,10 @@ end-of-shader
                      ;; -- Game logic --
                      (let ((GLfloat*-increment
                             (lambda (n x) (GLfloat*-set! vertex-data n (+ (GLfloat*-ref vertex-data n) x)))))
-                       (GLfloat*-increment 0 1.0)
-                       (GLfloat*-increment 4 1.0)
-                       (GLfloat*-increment 8 1.0)
-                       (GLfloat*-increment 12 1.0))
+                       (GLfloat*-increment 0 0.17)
+                       (GLfloat*-increment 4 0.17)
+                       (GLfloat*-increment 8 0.17)
+                       (GLfloat*-increment 12 0.17))
                      
                      ;; -- Draw --
                      (glClearColor 0.9 0.5 0.1 0.0)
@@ -216,9 +233,13 @@ end-of-shader
                      
                      (SDL_GL_SwapWindow win)
                      (main-loop))))
+                ;; Cleanup graphics subsystem
                 (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
                 (SDL_GL_DeleteContext ctx)
                 (SDL_DestroyWindow win)
+                ;; Cleanup audio subsystem
+                (Mix_FreeMusic background-music)
+                (Mix_FreeChunk sound-chunk)
                 (SDL_Quit)))))))
     (##gc)))
 

@@ -1,6 +1,9 @@
 ;;; Copyright (c) 2013 by Álvaro Castro Castilla
 ;;; Test for 2d and texturing with OpenGL 2.1
 
+;; Press space for playing music
+;; Click any mouse button for playing sound
+
 (##import-include core: base-macros)
 (##import-include core: assert-macros)
 (##import math: matrix)
@@ -77,7 +80,7 @@ end-of-shader
           (unless (= (TTF_Init) 0)
                   (fusion:error (string-append "Unable to initialize True Type Fonts system -- " (TTF_GetError))))
           ;; SDL Mixer
-          (unless (Mix_OpenAudio MIX_DEFAULT_FREQUENCY MIX_DEFAULT_FORMAT 2 4096)
+          (unless (Mix_OpenAudio 44100 MIX_DEFAULT_FORMAT 2 4096)
                   (fusion:error (string-append "Unable to initialize sound system -- " (MIX_GetError))))
 
           ;; Generate programs, buffers, textures
@@ -190,10 +193,6 @@ end-of-shader
               
               (glBindBuffer GL_ARRAY_BUFFER 0)
               (glBindVertexArray 0)
-
-              ;; Play Music
-              (unless (Mix_PlayMusic background-music* -1)
-                      (fusion:error (string-append "Unable to play OGG music -- " (Mix_GetError))))
               
               ;; Game loop
               (let ((event* (alloc-SDL_Event)))
@@ -208,17 +207,20 @@ end-of-shader
                                  (Mix_PlayChannel 1 sound-chunk* 0))
                                 ((= event-type SDL_KEYDOWN)
                                  (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION "Key down")
-                                 (error "C FFI error: Union")
-                                 #;
                                  (let* ((kevt* (SDL_Event-key event*))
-                                 #;
-                                 (key (SDL_Keysym-sym
-                                 (SDL_KeyboardEvent-keysym kevt*))))
-                                 
-                                 (cond ((= key SDLK_ESCAPE)
-                                 (quit))
-                                 (else
-                                 (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
+                                        (key (SDL_Keysym-sym
+                                              (SDL_KeyboardEvent-keysym kevt*))))
+                                   (cond
+                                    ((= key SDLK_SPACE)
+                                     ;; Play Music
+                                     (if (= 0 (Mix_PlayingMusic))
+                                         (unless (Mix_FadeInMusic background-music* -1 1000)
+                                                 (fusion:error (string-append "Unable to play OGG music -- " (Mix_GetError))))
+                                         (Mix_FadeOutMusic 1000)))
+                                    ((= key SDLK_ESCAPE)
+                                     (quit))
+                                    (else
+                                     (SDL_LogVerbose SDL_LOG_CATEGORY_APPLICATION (string-append "Key: " (number->string key)))))))
                                 (else #f)))
                              (event-loop)))
 

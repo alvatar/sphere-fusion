@@ -77,11 +77,11 @@ end-of-shader
           (glViewport 0 0 screen-width screen-height)
           (glScissor 0 0 screen-width screen-height)
           ;; SDL TTF
-          (unless (= (TTF_Init) 0)
+          (unless (= 0 (TTF_Init))
                   (fusion:error (string-append "Unable to initialize True Type Fonts system -- " (TTF_GetError))))
           ;; SDL Mixer
-          (unless (Mix_OpenAudio 44100 MIX_DEFAULT_FORMAT 2 4096)
-                  (fusion:error (string-append "Unable to initialize sound system -- " (MIX_GetError))))
+          (unless (= 0 (Mix_OpenAudio MIX_DEFAULT_FREQUENCY MIX_DEFAULT_FORMAT 2 4096))
+                  (fusion:error (string-append "Unable to initialize sound system -- " (Mix_GetError))))
 
           ;; Generate programs, buffers, textures
           (let* ((perspective-matrix (matrix:* (make-translation-matrix -1.0 1.0 0.0)

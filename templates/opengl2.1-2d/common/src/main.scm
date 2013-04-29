@@ -57,7 +57,7 @@ end-of-shader
             (ctx (SDL_GL_CreateContext win)))
         (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
         ;; OpenGL
-        (SDL_Log (string-append "OpenGL Version: " (unsigned-char*->string (glGetString GL_VERSION))))
+        (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
         (SDL_Log "Using API OpenGL Version: 2.1 - GL Shading Language Version: 1.2")
         ;; Glew: initialize extensions
         (glewInit)
@@ -145,7 +145,7 @@ end-of-shader
             (glBindVertexArray 0)
 
             ;; Game loop
-            (let ((event* (alloc-SDL_Event 1)))
+            (let ((event* (alloc-SDL_Event)))
               (call/cc
                (lambda (quit)
                  (let main-loop ()
@@ -202,7 +202,6 @@ end-of-shader
                    
                    (SDL_GL_SwapWindow win)
                    (main-loop))))
-              (free event*)
               (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
               (SDL_GL_DeleteContext ctx)
               (SDL_DestroyWindow win)

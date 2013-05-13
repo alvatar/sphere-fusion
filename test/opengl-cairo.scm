@@ -5,12 +5,11 @@
 (##import sdl2: sdl2 version: (debug))
 (##import cairo: cairo version: (debug))
 (##import opengl: gl version: (debug))
-(##import-include "templates/sdl-cairo-surface/common/src/gl-cairo.scm")
+(##import-include "templates/opengl-cairo/common/src/gl-cairo.scm")
 
 (define (main)
   ((fusion:create-simple-gl-cairo '(width: 1280 height: 752))
    (lambda (event world)
-     (println (string-append "event: " (object->string event) " ; world: " (object->string world)))
      (let ((type (SDL_Event-type event)))
        (cond
         ((= type SDL_QUIT)
@@ -48,7 +47,6 @@
          'new-world-modified-by-event))))
    (let ((posx 80.0))
      (lambda (cr time world)
-       (println (string-append "time: " (object->string time) " ; world: " (object->string world)))
        ;;(SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION (object->string (SDL_GL_Extension_Supported "GL_EXT_texture_format_BGRA8888")))
        (cairo_set_source_rgba cr 1.0 1.0 1.0 1.0)
        (cairo_rectangle cr 0.0 0.0 500.0 500.0)

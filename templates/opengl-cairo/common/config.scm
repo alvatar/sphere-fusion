@@ -1,4 +1,4 @@
-(sphere: "sdl-cairo")
+(sphere: "opengl-cairo")
 (dependencies:
  (main
   (load

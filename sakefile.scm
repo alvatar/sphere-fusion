@@ -29,7 +29,7 @@
   (sake:default-clean))
 
 (define-task test ()
-  (sake:test 'opengl2.1-2d))
+  (sake:test 'opengl-cairo))
 
 (define-task all (compile install)
   'all)

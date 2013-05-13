@@ -13,7 +13,7 @@
 
 (define (fusion:error-log . msgs)
   (SDL_LogError SDL_LOG_CATEGORY_APPLICATION
-                (apply string-append
+               (apply string-append
                        (map (lambda (m) (string-append
                                     (if (string? m) m (object->string m))
                                     " "))
@@ -70,7 +70,6 @@
                                                             pot-surface-data pot-size channels)))
                        (else
                         (lambda (c p) (fusion:error "Calling update-pot-texture in a npot-supporting system"))))))
-    (pp 'CHECK-POINT)
     (lambda (cairo-surface-data pot-surface-data)
       (unless cairo-surface-data
               (fusion:error "No valid surface data passed"))
@@ -97,15 +96,12 @@
             (y0 (exact->inexact y0))
             (x1 (exact->inexact (+ x0 width)))
             (y1 (exact->inexact (+ y0 height))))
-        (exit)
-        (pp x0)
-        (pp y0)
         (let ((coords
                (cond-expand
                 (mobile
                  (let ((x-tex (exact->inexact (/ width pot-size)))
                        (y-tex (exact->inexact (/ height pot-size))))
-                   (f32vector->GLfloat* (list->f32vector
+                   (f32vector->GLfloat* (f32vector
                                          x0 y1   ;; Rect coordinates
                                          0.0 0.0 ;; Tex coordinates
                                          x1 y1
@@ -115,7 +111,7 @@
                                          x0 y0
                                          0.0 y-tex))))
                 (else
-                 (f32vector->GLfloat* (list->f32vector
+                 (f32vector->GLfloat* (f32vector
                                        x0 y1   ;; Rect coordinates
                                        0.0 0.0 ;; Tex coordinates
                                        x1 y1
@@ -125,15 +121,15 @@
                                        x0 y0
                                        0.0 1.0)))))
               (indices (u16vector->GLushort* '#u16(0 1 2 0 3 2)))
-              (vertex-size (* (+ 2 2) sizeof-GLfloat)))
+              (vertex-size (* (+ 2 2) GLfloat-size)))
           (glEnableClientState GL_VERTEX_ARRAY)
           (glEnableClientState GL_TEXTURE_COORD_ARRAY)
-          (let* ((vertex-pointer (->void* coords))
+          (let* ((vertex-pointer (*->void* coords))
                  (texcoords-pointer (*-offset vertex-pointer
-                                              (* 2 sizeof-GLfloat))))
+                                              (* 2 GLfloat-size))))
             (glVertexPointer 2 GL_FLOAT vertex-size vertex-pointer)
             (glTexCoordPointer 2 GL_FLOAT vertex-size texcoords-pointer)
-            (glDrawElements GL_TRIANGLES 6 GL_UNSIGNED_SHORT (->void* indices)))))
+            (glDrawElements GL_TRIANGLES 6 GL_UNSIGNED_SHORT (*->void* indices)))))
       (glPopMatrix)
       (glDisableClientState GL_TEXTURE_COORD_ARRAY)
       (glDisableClientState GL_VERTEX_ARRAY)
@@ -178,7 +174,7 @@
                                   screen-width
                                   screen-height
                                   texture-channels)))
-            (SDL_Log (string-append "OpenGL Version: " (unsigned-char*->string (glGetString GL_VERSION))))
+            (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
             ;; OpenGL viewport
             (glViewport 0 0 screen-width screen-height)
             (glMatrixMode GL_PROJECTION)
@@ -199,7 +195,7 @@
             (receive
              (cairo cairo-surface-data pot-surface-data)
              (fusion:create-cairo-surface screen-width screen-height texture-channels)
-             (let ((event* (alloc-SDL_Event 1)))
+             (let ((event* (alloc-SDL_Event)))
                (call/cc
                 (lambda (leave)
                   (let draw-loop ((current-draw-world init-input))
@@ -219,14 +215,11 @@
                       (glClearColor 1.0 0.0 0.0 1.0)
                       (glClear GL_COLOR_BUFFER_BIT)
                       (render-surface cairo-surface-data pot-surface-data)
-                      (pp '***********************)
-
                       (SDL_GL_SwapWindow win)
                       (draw-loop draw-output-world)))))
-               (free (->void* event*))
-                (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
-                (glDeleteTextures num-textures textures)
-                (SDL_GL_DeleteContext ctx)
-                (SDL_DestroyWindow win)
-                (SDL_Quit)))))))
+               (SDL_LogInfo SDL_LOG_CATEGORY_APPLICATION "Bye.")
+               (glDeleteTextures num-textures textures)
+               (SDL_GL_DeleteContext ctx)
+               (SDL_DestroyWindow win)
+               (SDL_Quit)))))))
     (##gc)))

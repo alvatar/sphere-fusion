@@ -139,7 +139,7 @@ end-of-shader
             ;; Texture
             (glGenTextures 1 texture-id*)
             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-            (glTexImage2D GL_TEXTURE_2D 0 4
+            (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA
                           (SDL_Surface-w texture-surface*) (SDL_Surface-h texture-surface*)
                           0 GL_RGBA GL_UNSIGNED_BYTE
                           (SDL_Surface-pixels texture-surface*))

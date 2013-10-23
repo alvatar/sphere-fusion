@@ -28,9 +28,14 @@
   ;;  (fusion:android-clean))
   (sake#default-clean))
 
-(define-task test ()
-  ;(sake#test 'opengl2.1-2d)
-  (sake#delete-directory "test/tmp" force: #t))
+(define-task android:test (install) ; Install is here so the templates get installed
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t))
+  (shell-command "sfusion new -t opengl2d -p android test/tmp")
+  (shell-command "cd test/tmp && sake android"))
+
+(define-task test (android:test)
+  '(sake#test 'opengl2.1-2d))
 
 (define-task all (compile install)
   'all)

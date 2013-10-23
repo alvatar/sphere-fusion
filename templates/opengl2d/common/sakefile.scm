@@ -5,10 +5,19 @@
 ;-------------------------------------------------------------------------------
 
 (define-task desktop:run ()
-  (fusion:desktop-run-interpreted '(opengl2.1: main version: (debug))))
+  (fusion#desktop-run-interpreted '(opengl2.1: main version: (debug))))
 
 (define-task desktop:compile ()
-  (fusion:desktop-compile-and-link '(main)))
+  (fusion#desktop-compile-and-link '(main)))
+
+(define-task android:compile ()
+  'compile)
+
+(define-task android:upload ()
+  'upload)
+
+(define-task android (android:compile android:upload)
+  'android)
 
 (define-task all (desktop:compile)
   'all)

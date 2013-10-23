@@ -11,7 +11,9 @@
   (fusion#desktop-compile-and-link '(main)))
 
 (define-task android:compile ()
-  'compile)
+  (copy-file (string-append (%sphere-path 'sdl2) "src/android/jni/SDL2-2.0.0")
+             "android/jni/SDL")
+  (shell-command "cd android && ndk-build"))
 
 (define-task android:upload ()
   'upload)

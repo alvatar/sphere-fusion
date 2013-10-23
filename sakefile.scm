@@ -14,10 +14,10 @@
    ;;    (fusion: gl-cairo version: (debug))))
 
    ;; Compile SFusion
-   (sake:compile-to-exe "sfusion" '(sfusion))))
+   (sake#compile-to-exe "sfusion" '(sfusion))))
 
 (define-task install ()
-  (sake:install-sphere-to-system extra-directories: '("templates"))
+  (sake#install-sphere-to-system extra-directories: '("templates"))
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))
 
@@ -26,10 +26,11 @@
   ;;  ((fusion-setup-directory ""))
   ;;  (delete-file (android-build-directory))
   ;;  (fusion:android-clean))
-  (sake:default-clean))
+  (sake#default-clean))
 
 (define-task test ()
-  (sake:test 'opengl2.1-2d))
+  ;(sake#test 'opengl2.1-2d)
+  (sake#delete-directory "test/tmp" force: #t))
 
 (define-task all (compile install)
   'all)

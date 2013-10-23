@@ -279,7 +279,7 @@ include $(BUILD_SHARED_LIBRARY)
               modules)))
     (for-each
      (lambda (m output-filename)
-       (sake:compile-to-c m
+       (sake#compile-to-c m
                           output: output-filename
                           compiler-options: compiler-options
                           cond-expand-features: '(mobile android)

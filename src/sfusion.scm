@@ -87,17 +87,21 @@ Usage: sfusion platforms [template]
                 (lambda (file)
                   (case (file-info-type (file-info (string-append source-path relative-path file)))
                     ((regular)
-                     (let ((new-file (string-append project-path relative-path file)))
+                     (let ((original-file (string-append source-path relative-path file))
+                           (new-file (string-append project-path relative-path file)))
                        (when (file-exists? new-file)
                              (println
                               "Error creating project: templates for chosen platforms collide. Please contact template author.")
                              (exit error:operation-not-permitted))
-                       (call-with-output-file
-                           new-file
-                         (lambda (f) (display
-                                 ((build-template-from-file (string-append source-path relative-path file) 'platforms)
-                                  (map string->symbol platforms))
-                                 f)))))
+                       ;; Test whether it's a template file to process
+                       (if (string=? ".sct" (path-extension original-file))
+                           (call-with-output-file
+                               (path-strip-extension new-file)
+                             (lambda (f) (display
+                                     ((build-template-from-file (string-append source-path relative-path file) 'platforms)
+                                      (map string->symbol platforms))
+                                     f)))
+                           (copy-file original-file new-file))))
                     ((directory)
                      (create-directory (string-append project-path relative-path file))
                      (recur (string-append relative-path file "/")))))

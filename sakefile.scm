@@ -17,6 +17,14 @@
    (sake#compile-to-exe "sfusion" '(sfusion))))
 
 (define-task install ()
+  ;; Create SDL symlink in SDL-based templates
+  ;; When installed, files get actually copied as directory recursion is done.
+  (let ((SDL-link "templates/opengl2d/android/android/jni/SDL"))
+    (if (file-exists? SDL-link)
+        (##delete-file SDL-link))
+    (create-symbolic-link (string-append (%sphere-path 'sdl2) "src/android/jni/SDL")
+                          (string-append (current-directory) SDL-link)))
+  ;; Install Sphere and Fusion Templates
   (sake#install-sphere-to-system extra-directories: '("templates"))
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))
@@ -28,7 +36,7 @@
   ;;  (fusion:android-clean))
   (sake#default-clean))
 
-(define-task android:test (install) ; Install is here so the templates get installed
+(define-task android:test ()
   (if (file-exists? "test/tmp")
       (sake#delete-file "test/tmp" force: #t recursive: #t))
   (shell-command "sfusion new -t opengl2d -p android test/tmp")

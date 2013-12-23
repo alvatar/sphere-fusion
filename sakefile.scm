@@ -25,7 +25,6 @@
     (create-symbolic-link (string-append (%sphere-path 'sdl2) "src/android/jni/SDL")
                           (string-append (current-directory) SDL-link)))
   ;; Install Sphere and Fusion Templates
-  (sake#install-sphere-to-system extra-directories: '("templates"))
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))
 

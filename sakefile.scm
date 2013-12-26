@@ -35,17 +35,32 @@
   ;;  (fusion:android-clean))
   (sake#default-clean))
 
-(define-task android:test ()
-  (if (file-exists? "test/tmp")
-      (sake#delete-file "test/tmp" force: #t recursive: #t))
-  (shell-command "sfusion new -t opengl2d -p android test/tmp")
-  (shell-command "cd test/tmp && sake android"))
-
-(define-task test (android:test)
-  '(sake#test 'opengl2.1-2d))
-
 (define-task all (compile install)
   'all)
 
 (define-task force-install ()
   (sake#install-sphere-to-system extra-directories: '("generators")))
+
+;;------------------------------------------------------------------------------
+
+;; Tests
+
+(define-task test-android ()
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t))
+  (shell-command "sfusion new -t opengl2d -p android test/tmp")
+  (shell-command "cd test/tmp && sake android")
+  (sake#delete-file "test/tmp" force: #t recursive: #t))
+
+(define-task test-minimal ()
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t))
+  (shell-command "sfusion new -g minimal test/tmp")
+  (shell-command "cd test/tmp && sake")
+  (sake#delete-file "test/tmp" force: #t recursive: #t))
+
+(define-task test-opengl ()
+  (sake#test 'opengl2.1-2d))
+
+(define-task test (test-minimal)
+  'test)

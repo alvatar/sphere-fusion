@@ -1,9 +1,9 @@
-(sphere: "opengl2d")
+(sphere: "minimal")
 (dependencies:
  (main
   (include
    (core: base-macros)
    (core: assert-macros))
   (load
-   (math: matrix)
-   (fusion: core))))
+   (core: base))))
+

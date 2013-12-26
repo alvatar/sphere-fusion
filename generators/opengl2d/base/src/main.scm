@@ -208,3 +208,4 @@ end-of-shader
               (SDL_Quit)))))))
   (##gc))
 
+(main)

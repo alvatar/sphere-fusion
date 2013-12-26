@@ -5,7 +5,7 @@
 ;;!! Tasks
 
 (define-task host:run ()
-  (fusion#host-run-interpreted '(opengl2d: main version: (debug))))
+  (fusion#host-run-interpreted '(minimal: main))) 
 
 (define-task host:compile ()
   (error "Executable compilation NOT implemented yet.")

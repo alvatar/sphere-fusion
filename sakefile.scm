@@ -17,9 +17,9 @@
    (sake#compile-to-exe "sfusion" '(sfusion))))
 
 (define-task install ()
-  ;; Create SDL symlink in SDL-based templates
+  ;; Create SDL symlink in SDL-based generators
   ;; When installed, files get actually copied as directory recursion is done.
-  (let ((SDL-link "templates/opengl2d/android/android/jni/SDL"))
+  #;(let ((SDL-link "generators/opengl2d/android/android/jni/SDL"))
     (if (file-exists? SDL-link)
         (##delete-file SDL-link))
     (create-symbolic-link (string-append (%sphere-path 'sdl2) "src/android/jni/SDL")
@@ -46,3 +46,6 @@
 
 (define-task all (compile install)
   'all)
+
+(define-task force-install ()
+  (sake#install-sphere-to-system extra-directories: '("generators")))

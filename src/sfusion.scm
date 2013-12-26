@@ -8,14 +8,15 @@ Usage: sfusion [command] [flags] [operand]
 Commands:
     help [command]
         show help for the command
-    new [flags] [name-of-the-project]
+    new [flags] -g [generator] [name-of-the-project]
         create new project
-        --generator '-t' generator to use for project creation (required)
-        --platform '-p' generate for this target platform (required)
+        --generator '-g' generator to use for project creation (required)
     generators
         list available generators
     platforms [generator]
-        list available platforms for given generator
+        list available platforms for a given generator
+    add -g [generator] [platform]
+        add platform using generator
 
 ")
 
@@ -24,13 +25,11 @@ Commands:
 Use 'new' command to create a new project from scratch, using a generator
 
 Usage: sfusion new [flags] [name-of-the-project]
-    --generator '-t' generator to use for project creation (required)
-    --platform '-p' generate for this target platform (required)
-
-Example: sfusion new -t opengl -p linux -p android my-new-project
-    Creates the \"my-new-project\" using generator \"opengl\" and targetting
-    platforms \"Linux\" and \"Android\"
-
+    --generator '-g' generator to use for project creation (required)
+    
+Example: sfusion new -g opengl2d my-new-project
+    Creates the \"my-new-project\" using generator \"opengl\"
+    
 ")
 
 (define help:generators
@@ -60,25 +59,26 @@ Usage: sfusion platforms [generator]
           (directory-files path)))
 
 ;;! Recursively replicate the generator with its different platform implementations
-;; A "common" platform is processed first for common code
+;; A "base" platform is processed first for common code
 (define (create-project name generator platforms)
   (let* ((generator-path (string-append (generators-path) generator "/"))
          (platform-paths (map (lambda (p) (string-append generator-path p "/"))
-                              (cons "common" platforms)))
+                              (cons "base" platforms)))
          (project-path (string-append (current-directory) name "/")))
     (unless (file-exists? generator-path)
-            (println "Generator not available: please see available generators.")
+            (println "Generator not available: please see available generators (run 'spheres generators').")
             (exit error:no-such-file-or-directory))
     (unless (file-exists? (car platform-paths))
-            (println "Generator has no \"common\" directory (generator is incomplete): please contact generator author.")
+            (println "Generator has no \"base\" directory (generator is incomplete): please contact generator author.")
             (exit error:no-such-file-or-directory))
     (unless (every file-exists? platform-paths)
-            (println "Platform not available: please see available generators.")
+            (println "Platform not available: please see available platforms (run 'spheres platforms [generator]').")
             (exit error:no-such-file-or-directory))
     (when (file-exists? name)
           (println "Aborting: project folder already exists")
           (exit error:file-exists))
     (create-directory project-path)
+    (pp platform-paths)
     (for-each
      (lambda (source-path)
        ((Y (lambda (recur) ; Anonymous recursion: call recur with the new relative-path argument
@@ -122,30 +122,33 @@ Usage: sfusion platforms [generator]
                        "No help for this command\n")))))
    ;; Command: new
    ((string=? (cadr (command-line)) "new")
-    (args-fold-receive (project-name generator)
+    (args-fold-receive (project-name generator platforms)
                        (args-fold (cddr (command-line))
                                   ;; Option processors
                                   (list (option '(#\g "generator") #t #f
-                                                (lambda (option name arg generator)
-                                                  (values arg generator))))
+                                                (lambda (option name arg generator platforms)
+                                                  (values arg platforms)))
+                                        (option '(#\p "platform") #t #f
+                                                (lambda (option name arg generator platforms)
+                                                  (values generator (cons arg platforms)))))
                                   ;; Unrecognized option processor
                                   (lambda (option name arg . seeds)
                                     (println (string-append "Unrecognized option: -" (string name)))
                                     (exit error:invalid-argument))
                                   ;; Operand processor: its output gets passed to receive
-                                  (lambda (operand generator)
-                                    (values operand generator))
+                                  (lambda (operand generator platforms)
+                                    (values operand generator platforms))
                                   ;; Default argument values
                                   #f
                                   '())
-                       (lambda (project-name generator)
+                       (lambda (project-name generator platforms)
                          (unless generator
                                  (println "Missing argument: generator")
                                  (exit error:invalid-argument)))
                        (lambda args
                          (println "Missing or malformed arguments. Try \"sfusion help\" for more information.")
                          (exit error:invalid-argument))
-                       (create-project project-name generator #f)))
+                       (create-project project-name generator platforms)))
    ;; Command: generators
    ((string=? (cadr (command-line)) "generators")
     (println "Available generators:")
@@ -163,7 +166,7 @@ Usage: sfusion platforms [generator]
               (exit error:invalid-argument))
       (println "Available platforms for generator " generator ":")
       (for-each (lambda (d) (display "  - ") (println d))
-                (remove (curry string=? "common") (directory-subdirs generator-path)))))
+                (remove (curry string=? "base") (directory-subdirs generator-path)))))
    ;; Unrecognized command
    (else
     (println "sfusion: unrecognized command. Try \"sfusion help\" for more information. ")

@@ -1,6 +1,8 @@
-;-------------------------------------------------------------------------------
-; Setup and initialization
-;-------------------------------------------------------------------------------
+;;; Copyright (c) 2012 by Álvaro Castro Castilla
+;;; Extensions for Sake, to use with Fusion projects
+
+;;------------------------------------------------------------------------------
+;;!! Setup and initialization
 
 (define fusion-setup-directory
   (make-parameter "fusion/"))
@@ -86,9 +88,9 @@
                              "jni/gambit"))
                       (android-jni-directory)))))
 
-;-------------------------------------------------------------------------------
-; Android
-;-------------------------------------------------------------------------------
+
+;;------------------------------------------------------------------------------
+;;!! Android
 
 ;;; Generate default Manifest and properties file
 (define (fusion#android-generate-manifest-and-properties #!key
@@ -136,7 +138,7 @@
        (string-append "target=android-" (number->string api-level) "\n")
        file))))
 
-;;; Global describing necessary info for importing addons
+;;! Global describing necessary info for importing addons
 (define *fusion#addons-info*
   '((cairo ((directories: ("cairo/" "cairo-extra/"))
             (dependencies: (pixman))
@@ -167,7 +169,7 @@
              (android-static-libraries: "libpixman cpufeatures")
              (android-shared-libraries: "pixman pixman-extra")))))
 
-;;; Build the system with this addon
+;;! Build the system with this addon
 (define (fusion#android-import-addon libs #!key (fresh-copy #f))
   (let ((fusion-path (%sphere-path 'fusion)))
     (for-each
@@ -197,10 +199,10 @@
                                (cadr (assq directories: lib-info-list))))))))
      libs)))
 
-;;; Global holding the list of imported addons
+;;! Global holding the list of imported addons
 (define *fusion#imported-addons* '())
 
-;;; Generate Android.mk given a set of moduels and optional spheres
+;;! Generate Android.mk given a set of moduels and optional spheres
 (define (fusion#android-generate-mk modules)
   (info/color 'blue "generating Android.mk")
   (let ((c-files (map (lambda (m) (%module-filename-c m)) modules))
@@ -367,9 +369,9 @@ include $(BUILD_SHARED_LIBRARY)
 (define (fusion#android-upload-file-to-sd relative-path)
   (err "unimplemented"))
 
-;-------------------------------------------------------------------------------
-; Host platform
-;-------------------------------------------------------------------------------
+
+;;------------------------------------------------------------------------------
+;;!! Host platform
 
 (define (fusion#host-platform)
   (let ((uname (shell-command "uname -o")))
@@ -385,9 +387,18 @@ include $(BUILD_SHARED_LIBRARY)
                       ;(##include "~~spheres/spheres#.scm")
                       (##import ,main-module))))
 
-;-------------------------------------------------------------------------------
-; Main tasks
-;-------------------------------------------------------------------------------
+(define (fusion#host-compile-exe exe-name main-module #!key
+                                 (version '())
+                                 (cond-expand-features '())
+                                 (verbose #f))
+  (sake#compile-to-exe exe-name (list main-module)
+                       version: version
+                       cond-expand-features: cond-expand-features
+                       verbose: verbose))
+
+
+;;------------------------------------------------------------------------------
+;;!! Main tasks
 
 (define-task init ()
   (if (file-exists? (fusion-setup-directory))

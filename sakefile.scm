@@ -1,5 +1,8 @@
 (include "src/sake-fusion.scm")
 
+(define modules
+  '(core))
+
 (define-task compile ()
   (parameterize
    ((fusion-setup-directory ""))
@@ -13,6 +16,10 @@
    ;;  '((fusion: driver version: (debug))
    ;;    (fusion: gl-cairo version: (debug))))
 
+   ;; Compile Fusion modules
+   (for-each (lambda (m) (sake#compile-c-to-o (sake#compile-to-c m compiler-options: '(debug)))) modules)
+   (for-each (lambda (m) (sake#compile-c-to-o (sake#compile-to-c m))) modules)
+
    ;; Compile SFusion
    (sake#compile-to-exe "sfusion" '(sfusion))))
 
@@ -24,6 +31,10 @@
         (##delete-file SDL-link))
     (create-symbolic-link (string-append (%sphere-path 'sdl2) "src/android/jni/SDL")
                           (string-append (current-directory) SDL-link)))
+  
+  ;; Install Fusion modules
+  (for-each (lambda (m) (sake#install-compiled-module m versions: '(() (debug)))) modules)
+  
   ;; Install Sphere and Fusion Templates
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))

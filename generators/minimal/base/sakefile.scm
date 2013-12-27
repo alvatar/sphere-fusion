@@ -8,8 +8,7 @@
   (fusion#host-run-interpreted '(minimal: main))) 
 
 (define-task host:compile ()
-  (error "Executable compilation NOT implemented yet.")
-  (fusion#host-compile-and-link '(main)))
+  (fusion#host-compile-exe "main" 'main))
 
 (define-task all (host:run)
   'all)

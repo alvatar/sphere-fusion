@@ -1,4 +1,4 @@
-;;; Copyright (c) 2012 by Álvaro Castro Castilla
+;;; Copyright (c) 2012-2013 by Álvaro Castro Castilla
 ;;; SFusion: generate Scheme Spheres projects from generators
 
 (define help:general

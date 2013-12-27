@@ -153,21 +153,21 @@ Usage: sfusion targets [generator]
      target-paths)
     (println (string-append "Project " name " succesfully created"))))
 
-(define (main)
+(define (main arguments)
   (cond
-   ((null? (cdr (command-line)))
+   ((null? (cdr arguments))
     (display help:general))
    ;; Command: help
-   ((string=? (cadr (command-line)) "help")
-    (if (null? (cddr (command-line)))
+   ((string=? (cadr arguments) "help")
+    (if (null? (cddr arguments))
         (display help:general)
         (let ((help-al `((new . ,help:new) (generators . ,help:generators) (targets . ,help:targets))))
-          (display (or (aif it (assq (string->symbol (caddr (command-line))) help-al) (cdr it))
+          (display (or (aif it (assq (string->symbol (caddr arguments)) help-al) (cdr it))
                        "No help for this command\n")))))
    ;; Command: new
-   ((string=? (cadr (command-line)) "new")
+   ((string=? (cadr arguments) "new")
     (args-fold-receive (project-name generator targets)
-                       (args-fold (cddr (command-line))
+                       (args-fold (cddr arguments)
                                   ;; Option processors
                                   (list (option '(#\g "generator") #t #f
                                                 (lambda (option name arg generator targets)
@@ -194,16 +194,16 @@ Usage: sfusion targets [generator]
                          (exit error:invalid-argument))
                        (create-project project-name generator targets)))
    ;; Command: generators
-   ((string=? (cadr (command-line)) "generators")
+   ((string=? (cadr arguments) "generators")
     (println "Available generators:")
     (for-each (lambda (d) (display "  - ") (println d))
               (directory-subdirs (generators-path))))
    ;; Command: targets
-   ((string=? (cadr (command-line)) "targets")
-    (when (null? (cddr (command-line)))
+   ((string=? (cadr arguments) "targets")
+    (when (null? (cddr arguments))
           (println "Missing argument: generator")
           (exit error:invalid-argument))
-    (let* ((generator (caddr (command-line)))
+    (let* ((generator (caddr arguments))
            (generator-path (string-append (generators-path) generator "/")))
       (unless (file-exists? generator-path)
               (println "Target doesn't exist. Try \"sfusion generators\" command for a list of available generators.")
@@ -212,7 +212,7 @@ Usage: sfusion targets [generator]
       (for-each (lambda (d) (display "  - ") (println d))
                 (remove (curry string=? "base") (directory-subdirs generator-path)))))
    ;; Command: add
-   ((string=? (cadr (command-line)) "add")
+   ((string=? (cadr arguments) "add")
     'add)
    ;; Unrecognized command
    (else
@@ -221,4 +221,4 @@ Usage: sfusion targets [generator]
   (exit error:success))
 
 ;; Run!
-(main)
+(main (command-line))

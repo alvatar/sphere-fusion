@@ -32,14 +32,18 @@
     (create-symbolic-link (string-append (%sphere-path 'sdl2) "src/android/jni/SDL")
                           (string-append (current-directory) SDL-link)))
   
-  ;; Install Fusion modules
-  (for-each (lambda (m) (sake#make-module-available m versions: '(() (debug)))) modules)
-  
+  ;; Make Fusion modules available in /lib
+  (for-each (lambda (m) (sake#make-module-available m versions: '(() (debug)))) modules))
+
+(define-task install-binary-and-sake-extension ()
   ;; Install Sphere and Fusion Templates
   (copy-file (string-append (current-build-directory) "sfusion")
-             "~~bin/sfusion"))
+             "~~bin/sfusion")
+  ;; Install Sake extension
+  (copy-file (string-append (current-source-directory) "sake-fusion.scm")
+             "~~spheres/core/src/sake/extensions/fusion.scm"))
 
-(define-task install ()
+(define-task install (install-binary-and-sake-extension)
   (sake#install-sphere-to-system extra-directories: '("generators")))
 
 (define-task clean ()
@@ -49,7 +53,7 @@
   ;;  (fusion:android-clean))
   (sake#default-clean))
 
-(define-task all (compile post-compile)
+(define-task all (compile post-compile install-binary-and-sake-extension)
   'all)
 
 

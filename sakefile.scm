@@ -1,4 +1,4 @@
-(include "src/sake-fusion.scm")
+(##include "src/sake-fusion.scm")
 
 (define modules
   '(core))

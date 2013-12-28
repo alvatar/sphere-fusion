@@ -17,8 +17,8 @@
    ;;    (fusion: gl-cairo version: (debug))))
 
    ;; Compile Fusion modules
-   (for-each (lambda (m) (sake#compile-c-to-o (sake#compile-to-c m compiler-options: '(debug)))) modules)
-   (for-each (lambda (m) (sake#compile-c-to-o (sake#compile-to-c m))) modules)
+   (for-each (lambda (m) (sake#compile-module m compiler-options: '(debug))) modules)
+   (for-each sake#compile-module modules)
 
    ;; Compile SFusion
    (sake#compile-to-exe "sfusion" '(sfusion))))

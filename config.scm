@@ -3,12 +3,12 @@
  (sfusion
   (include
    (core: base-macros)
-   (energy: program-arguments-macros))
+   (energy: functional-arguments-macros))
   (load
    (fabric: algorithm/list)
    (energy: error-code)
    (energy: functional)
-   (energy: program-arguments)
+   (energy: functional-arguments)
    (energy: template)))
  (core
   (load

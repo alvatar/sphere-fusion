@@ -23,7 +23,7 @@
    ;; Compile SFusion
    (sake#compile-to-exe "sfusion" '(sfusion))))
 
-(define-task install ()
+(define-task post-compile ()
   ;; Create SDL symlink in SDL-based generators
   ;; When installed, files get actually copied as directory recursion is done.
   #;(let ((SDL-link "generators/opengl2d/android/android/jni/SDL"))
@@ -33,11 +33,14 @@
                           (string-append (current-directory) SDL-link)))
   
   ;; Install Fusion modules
-  (for-each (lambda (m) (sake#install-compiled-module m versions: '(() (debug)))) modules)
+  (for-each (lambda (m) (sake#make-module-available m versions: '(() (debug)))) modules)
   
   ;; Install Sphere and Fusion Templates
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion"))
+
+(define-task install ()
+  (sake#install-sphere-to-system extra-directories: '("generators")))
 
 (define-task clean ()
   ;; (parameterize
@@ -46,14 +49,11 @@
   ;;  (fusion:android-clean))
   (sake#default-clean))
 
-(define-task all (compile install)
+(define-task all (compile post-compile)
   'all)
 
-(define-task force-install ()
-  (sake#install-sphere-to-system extra-directories: '("generators")))
 
 ;;------------------------------------------------------------------------------
-
 ;; Tests
 
 (define-task test-android ()

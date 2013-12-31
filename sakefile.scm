@@ -41,7 +41,7 @@
              "~~bin/sfusion")
   ;; Install Sake extension
   (copy-file (string-append (current-source-directory) "sake-fusion.scm")
-             "~~spheres/core/src/sake/extensions/fusion.scm"))
+             "~~spheres/sake-extensions/src/fusion.scm"))
 
 (define-task install (install-binary-and-sake-extension)
   (sake#install-sphere-to-system extra-directories: '("generators")))

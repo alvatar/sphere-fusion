@@ -1,6 +1,6 @@
 (##include "src/sake-fusion.scm")
 
-(define modules
+(define non-compiled-modules
   '(core))
 
 (define-task compile ()
@@ -16,10 +16,6 @@
    ;;  '((fusion: driver version: (debug))
    ;;    (fusion: gl-cairo version: (debug))))
 
-   ;; Compile Fusion modules
-   (for-each (lambda (m) (sake#compile-module m compiler-options: '(debug))) modules)
-   (for-each sake#compile-module modules)
-
    ;; Compile SFusion
    (sake#compile-to-exe "sfusion" '(sfusion))))
 
@@ -33,7 +29,7 @@
                           (string-append (current-directory) SDL-link)))
   
   ;; Make Fusion modules available in /lib
-  (for-each (lambda (m) (sake#make-module-available m versions: '(() (debug)))) modules))
+  (for-each (lambda (m) (sake#make-module-available m omit-o: #t versions: '(() (debug)))) non-compiled-modules))
 
 (define-task install-binary-and-sake-extension ()
   ;; Install Sphere and Fusion Templates

@@ -29,7 +29,7 @@
                           (string-append (current-directory) SDL-link)))
   
   ;; Make Fusion modules available in /lib
-  (for-each (lambda (m) (sake#make-module-available m omit-o: #t versions: '(() (debug)))) non-compiled-modules))
+  'post-compile)
 
 (define-task install-binary-and-sake-extension ()
   ;; Install Sphere and Fusion Templates

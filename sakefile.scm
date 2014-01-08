@@ -17,7 +17,7 @@
    ;;    (fusion: gl-cairo version: (debug))))
 
    ;; Compile SFusion
-   (sake#compile-to-exe "sfusion" '(sfusion))))
+   (sake#compile-to-exe "sfusion" '(sfusion) cond-expand-features: '(optimize))))
 
 (define-task post-compile ()
   ;; Create SDL symlink in SDL-based generators

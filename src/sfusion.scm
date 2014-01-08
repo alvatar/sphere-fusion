@@ -1,6 +1,14 @@
 ;;; Copyright (c) 2012-2013 by Álvaro Castro Castilla
 ;;; SFusion: generate Scheme Spheres projects from generators
 
+(cond-expand
+ (optimize
+  (declare (standard-bindings) (extended-bindings) (not safe) (block)))
+ (debug
+  (declare (safe) (debug) (debug-location) (debug-source) (debug-environments)))
+ (else (void)))
+
+
 (define help:general
   "
 Usage: sfusion [command] [flags] [operand]

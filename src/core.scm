@@ -1,6 +1,13 @@
 ;;; Copyright (c) 2013 by Álvaro Castro Castilla
 ;;; Core and basic functionality for Sphere Fusion
 
+(cond-expand
+ (optimize
+  (declare (standard-bindings) (extended-bindings) (not safe) (block)))
+ (debug
+  (declare (safe) (debug) (debug-location) (debug-source) (debug-environments)))
+ (else (void)))
+
 (define (fusion:error . msgs)
   (SDL_LogError SDL_LOG_CATEGORY_APPLICATION
                 (apply string-append

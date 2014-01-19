@@ -262,6 +262,8 @@ Commands:
     new [flags] -g [generator] [name-of-the-project]
         create new project
         --generator '-g' generator to use for project creation (required)
+        --target '-t' select a target (if unused, all available ones will be selected)
+        --source '-s' alternate source directory containing generators
     generators
         list available generators
     targets [generator]
@@ -277,6 +279,8 @@ Use 'new' command to create a new project from scratch, using a generator
 
 Usage: sfusion new [flags] [name-of-the-project]
     --generator '-g' generator to use for project creation (required)
+    --target '-t' select a target (if unused, all available ones will be selected)
+    --source '-s' alternate source directory containing generators
     
 Example: sfusion new -g opengl2d my-new-project
     Creates the \"my-new-project\" using generator \"opengl\"
@@ -317,6 +321,10 @@ Usage: sfusion targets [generator]
 (define (target-path->script-path target-path)
   (let ((script-file (substring target-path 0 (-- (string-length target-path)))))
     (string-append script-file ".scm")))
+
+;;! Get a list of a generator's targets
+(define (generator-targets generator-path)
+  (remove (curry string=? "base") (directory-subdirs generator-path)))
 
 ;;------------------------------------------------------------------------------
 ;;!! Generator tasks
@@ -364,7 +372,8 @@ Usage: sfusion targets [generator]
   (parameterize
    ((generators-path (or source (generators-path))))
    (let* ((generator-path (string-append (generators-path) generator "/"))
-          (targets (cons "base" targets))
+          ;; If no target is given, add all by default
+          (targets (if (null? targets) (directory-subdirs generator-path) (cons "base" targets)))
           (target-paths (map (lambda (p) (string-append generator-path p "/")) targets))
           (project-path (string-append (current-directory) name "/")))
      (unless (file-exists? generator-path)
@@ -461,7 +470,7 @@ Usage: sfusion targets [generator]
               (exit error:invalid-argument))
       (println "Available targets for generator " generator ":")
       (for-each (lambda (d) (display "  - ") (println d))
-                (remove (curry string=? "base") (directory-subdirs generator-path)))))
+                (generator-targets generator-path))))
    ;; Command: add
    ((string=? (cadr arguments) "add")
     'add)

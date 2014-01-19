@@ -43,11 +43,9 @@
 (define-task test-minimal ()
   (if (file-exists? "test/tmp")
       (sake#delete-file "test/tmp" force: #t recursive: #t))
-  (shell-command "sfusion new -g minimal -t android -s generators/ test/tmp")
+  (shell-command "sfusion new -g minimal -s generators/ test/tmp")
   (shell-command "cd test/tmp && sake host")
-  ;(shell-command "cd test/tmp && sake android")
-  ;(sake#delete-file "test/tmp" force: #t recursive: #t)
-  )
+  (sake#delete-file "test/tmp" force: #t recursive: #t))
 
 (define-task test-opengl ()
   (sake#test 'opengl2.1-2d))

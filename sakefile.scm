@@ -4,7 +4,7 @@
   '(core))
 
 (define-task compile ()
-  ;; Compile SFusion
+  ;; Compile Sfusion
   (sake#compile-to-exe "sfusion" '(sfusion) cond-expand-features: '(optimize)))
 
 (define-task post-compile ()
@@ -19,15 +19,15 @@
   ;; Make Fusion modules available in /lib
   'post-compile)
 
-(define-task install-binary-and-sake-extension ()
-  ;; Install Sphere and Fusion Templates
+(define-task install-binary-and-sake-extensions ()
+  ;; Install Sfusion
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion")
   ;; Install Sake extension
   (copy-file (string-append (current-source-directory) "sake-fusion.scm")
              "~~spheres/sake-extensions/src/fusion.scm"))
 
-(define-task install (install-binary-and-sake-extension)
+(define-task install (install-binary-and-sake-extensions)
   (sake#install-sphere-to-system extra-directories: '("generators")))
 
 (define-task clean ()

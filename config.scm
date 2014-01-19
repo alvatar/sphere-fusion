@@ -8,7 +8,9 @@
    (core: functional)
    (fabric: algorithm/list)
    (energy: error-code)
+   (energy: filesystem)
    (energy: functional-arguments)
+   (energy: log)
    (energy: template)))
  (core
   (load

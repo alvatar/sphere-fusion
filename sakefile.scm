@@ -49,8 +49,15 @@
   (shell-command "cd test/tmp && sake host")
   (sake#delete-file "test/tmp" force: #t recursive: #t))
 
+(define-task test-remote ()
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t))
+  (shell-command "sfusion new -g remote -s generators/ test/tmp")
+  (shell-command "cd test/tmp && sake host")
+  (sake#delete-file "test/tmp" force: #t recursive: #t))
+
 (define-task test-opengl ()
   (sake#test 'opengl2.1-2d))
 
-(define-task test (test-minimal)
+(define-task test (test-remote)
   'test)

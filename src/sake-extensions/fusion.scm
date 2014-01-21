@@ -521,13 +521,18 @@
           ((equal? "Darwin" uname) 'osx)
           (else (err "fusion#host-platform -> can't detect current platform")))))
 
-(define (fusion#host-run-interpreted main-module #!key (version '()))
-  (gambit-eval-here `( ;;(##namespace (,(string-append (symbol->string (gensym 'sakefile)) "#")))
-                      ;;(##include "~~lib/gambit#.scm")
-                      ;;(##include "~~spheres/core/src/sake/sakelib#.scm")
-                      ;;(##namespace ("" alexpand))
-                      ;;(##include "~~spheres/spheres#.scm")
-                      (##import ,main-module))))
+(define (fusion#host-run-interpreted main-module #!key
+                                     (version '())
+                                     (cond-expand-features '()))
+  (let ((code `(;;(##namespace (,(string-append (symbol->string (gensym 'sakefile)) "#")))
+                ;;(##include "~~lib/gambit#.scm")
+                ;;(##include "~~spheres/core/src/sake/sakelib#.scm")
+                ;;(##namespace ("" alexpand))
+                ;;(##include "~~spheres/spheres#.scm")
+                (define-cond-expand-feature host)
+                ,@(map (lambda (f) `(define-cond-expand-feature ,f)) cond-expand-features)
+                (##import ,main-module))))
+   (gambit-eval-here code)))
 
 (define (fusion#host-compile-exe exe-name main-module #!key
                                  (version '())
@@ -535,5 +540,5 @@
                                  (verbose #f))
   (sake#compile-to-exe exe-name (list main-module)
                        version: version
-                       cond-expand-features: cond-expand-features
+                       cond-expand-features: (cons 'host cond-expand-features)
                        verbose: verbose))

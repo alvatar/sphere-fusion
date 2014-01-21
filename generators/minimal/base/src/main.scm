@@ -13,7 +13,9 @@
  (android
   (c-define (c-fib x) (int32) int "fib" "" (fib x))
   (c-define (c-testports) '() char-string "testports" "" (test-ports)))
- (else
+ (host
   (println (fib 10))
-  (println (test-ports))))
+  (println (test-ports)))
+ (else
+  (void)))
 

@@ -515,12 +515,6 @@
 ;;------------------------------------------------------------------------------
 ;;!! Host platform
 
-(define (fusion#host-platform)
-  (let ((uname (shell-command "uname -o")))
-    (cond ((equal? "GNU/Linux" uname) 'linux)
-          ((equal? "Darwin" uname) 'osx)
-          (else (err "fusion#host-platform -> can't detect current platform")))))
-
 (define (fusion#host-run-interpreted main-module #!key
                                      (version '())
                                      (cond-expand-features '()))

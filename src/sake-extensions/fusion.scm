@@ -182,20 +182,20 @@
       ;; Create Android build directory if it doesn't exist
       (unless (file-exists? (android-build-directory))
               (make-directory (android-build-directory)))
-      ;; Process 'src'
-      (fusion#process-directory-with-templates (android-src-directory)
-                                               (string-append (android-directory) "src-generator/")
-                                               '(app-name main-module-name c-files-string)
-                                               `("main"
-                                                 "main"
-                                                 ,(apply string-append (map (lambda (file) (string-append file " ")) all-c-files))))
-      ;; Process 'jni'
-      (fusion#process-directory-with-templates (android-jni-directory)
-                                               (string-append (android-directory) "jni-generator/")
-                                               '(app-name main-module-name c-files-string)
-                                               `("main"
-                                                 "main"
-                                                 ,(apply string-append (map (lambda (file) (string-append file " ")) all-c-files))))
+      (let ((arguments '(app-name main-module-name c-files-string))
+            (arg-values `("main"
+                          "main"
+                          ,(apply string-append (map (lambda (file) (string-append file " ")) all-c-files)))))
+        ;; Process 'src'
+        (fusion#process-directory-with-templates (android-src-directory)
+                                                 (string-append (android-directory) "src-generator/")
+                                                 arguments
+                                                 arg-values)
+        ;; Process 'jni'
+        (fusion#process-directory-with-templates (android-jni-directory)
+                                                 (string-append (android-directory) "jni-generator/")
+                                                 arguments
+                                                 arg-values))
       ;; Copy generated C from both compiled and imported modules into android build directory
       (for-each
        (lambda (m) (copy-file
@@ -205,18 +205,14 @@
                               (%module-filename-c m))))
        all-modules)
       ;; Generate link file
-      (fusion#android-generate-link-file all-modules)
-      
-      (exit)
-      
-      #;
-      (fusion#android-generate-Android.mk-file
-       (string-append (android-directory) (android-jni-directory-suffix) "Android.mk.sct")
-       app-name
-       all-c-files))
-    ;; Call "ndk-build"
-    (unless (zero? (shell-command (string-append (android-ndk-build-path) " -C " (android-directory))))
-            (err "error building native code"))
+      (fusion#android-generate-link-file all-modules))
+    (info/color 'blue "compiling JNI side")
+    ;; Call "ndk-build". We dump the output to a file, as Gambit has issues with the "-j" flag for concurrent compilation
+    (unless (zero? (shell-command (string-append (android-ndk-build-path) " -j -C " (android-directory) " &>ndk-log")))
+            (err "error building native code\n\n" (sake#read-file "ndk-log")))
+    (if verbose (display (sake#read-file "ndk-log")))
+    (sake#delete-file "ndk-log")
+    (info/color 'blue "compiling Java side")
     ;; Call "ant"
     (unless (zero? (shell-command (string-append (host-ant-path) " -s " (android-directory) "build.xml "
                                                  (cond ((eq? 'debug target) "debug")

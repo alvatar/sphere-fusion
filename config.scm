@@ -14,5 +14,7 @@
    (energy: template)))
  (core
   (load
-   (opengl: gl)
+   (cond-expand
+    (mobile (opengl: gl-es2))
+    (else (opengl: gl)))
    (sdl2: sdl2))))

@@ -16,7 +16,7 @@
                                     " "))
                             msgs)))
   ;; FIX: this doesn't work for Android
-  (exit 1))
+  (SDL_Quit))
 
 (define (fusion:error-log . msgs)
   (SDL_LogError SDL_LOG_CATEGORY_APPLICATION

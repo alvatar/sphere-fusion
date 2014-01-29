@@ -48,6 +48,12 @@
   (shell-command "sfusion new -g minimal -s generators/ test/tmp")
   (shell-command "cd test/tmp && sake host"))
 
+(define-task test-minimal-android ()
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t))
+  (shell-command "sfusion new -g minimal -s generators/ test/tmp")
+  (shell-command "cd test/tmp && sake android:setup android"))
+
 (define-task test-remote ()
   (if (file-exists? "test/tmp")
       (sake#delete-file "test/tmp" force: #t recursive: #t))

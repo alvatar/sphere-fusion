@@ -1,16 +1,9 @@
 ;;! Define function to be used for output interception in the server
 (cond-expand
  (android (define server-display
-            (c-lambda (char-string) void "input_from_scheme")))
+            (compose (c-lambda (char-string) void "input_from_scheme") string)))
  (host (define server-display pp))
  (else (void)))
-
-;;! Main
-(define (main)
-  (repl-server-initialize-defaults!)
-  (repl-server-start #f intercept-output: (compose server-display string))
-  ;; You could actually be doing useful stuff here if you wish...
-  (thread-sleep! +inf.0))
 
 ;;! Run or attach 'main'
 (cond-expand

@@ -1,0 +1,7 @@
+bin
+gen
+jni
+libs
+obj
+local.properties
+src

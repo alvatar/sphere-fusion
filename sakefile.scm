@@ -56,8 +56,15 @@
   (shell-command "cd test/tmp && sake host")
   (sake#delete-file "test/tmp" force: #t recursive: #t))
 
+(define-task test-sdl-opengl ()
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t))
+  (shell-command "sfusion new -g sdl-opengl -s generators/ test/tmp")
+  (shell-command "cd test/tmp && sake host:run")
+  (sake#delete-file "test/tmp" force: #t recursive: #t))
+
 (define-task test-opengl ()
   (sake#test 'opengl2.1-2d))
 
-(define-task test (test-remote)
+(define-task test (test-sdl-opengl)
   'test)

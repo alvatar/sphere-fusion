@@ -128,43 +128,43 @@ Usage: sfusion targets [generator]
 (define (create-project name generator targets source)
   (parameterize
    ((generators-path (or source (generators-path))))
-   (let* ((generator-path (string-append (generators-path) generator "/"))
-          ;; If no target is given, add all by default
-          (targets (if (null? targets) (directory-subdirs generator-path) (cons "base" targets)))
-          (target-paths (map (lambda (p) (string-append generator-path p "/")) targets))
-          (project-path (string-append (current-directory) name "/")))
+   (let ((generator-path (string-append (generators-path) generator "/")))
      (unless (file-exists? generator-path)
              (println "Generator not available: please see available generators (run 'sfusion generators').")
              (exit error:no-such-file-or-directory))
-     (unless (file-exists? (car target-paths))
-             (println "Generator has no \"base\" directory (generator is incomplete): please contact generator author.")
-             (exit error:no-such-file-or-directory))
-     (unless (every file-exists? target-paths)
-             (println "Target not available: please see available targets (run 'sfusion targets [generator]').")
-             (exit error:no-such-file-or-directory))
-     (when (file-exists? name)
-           (println "Aborting: project folder already exists")
-           (exit error:file-exists))
-     (create-directory project-path)
-     ;; Generators consist of templates organized by directories, which depend  on the target.
-     ;; Templates generate the custom code for each project. A scheme script named like the
-     ;; target takes care of running the necessary actions for instantiating the code.
-     (for-each
-      (lambda (target target-path)
-        (let ((script-file (target-path->script-path target-path)))
-          ;; Check if there is a script file and run the process through it.
-          (if (file-exists? script-file)
-              ;; The script file gets evaluated here.
-              (eval `(,@(with-input-from-file script-file read-all)
-                      ;; We inject the target information as a list, so it can be used by the script file
-                      `((project-path: ,,project-path)
-                        (target: ,,target)
-                        (target-path: ,,target-path))))
-              ;; Otherwise, proceed with regular target instantiation
-              (instantiate-target project-path target-path))))
-      targets
-      target-paths)
-     (println (string-append "Project " name " succesfully created")))))
+     ;; If no target is given, add all by default
+     (let* ((targets (if (null? targets) (directory-subdirs generator-path) (cons "base" targets)))
+            (target-paths (map (lambda (p) (string-append generator-path p "/")) targets))
+            (project-path (string-append (current-directory) name "/")))
+       (unless (file-exists? (car target-paths))
+               (println "Generator has no \"base\" directory (generator is incomplete): please contact generator author.")
+               (exit error:no-such-file-or-directory))
+       (unless (every file-exists? target-paths)
+               (println "Target not available: please see available targets (run 'sfusion targets [generator]').")
+               (exit error:no-such-file-or-directory))
+       (when (file-exists? name)
+             (println "Aborting: project folder already exists")
+             (exit error:file-exists))
+       (create-directory project-path)
+       ;; Generators consist of templates organized by directories, which depend  on the target.
+       ;; Templates generate the custom code for each project. A scheme script named like the
+       ;; target takes care of running the necessary actions for instantiating the code.
+       (for-each
+        (lambda (target target-path)
+          (let ((script-file (target-path->script-path target-path)))
+            ;; Check if there is a script file and run the process through it.
+            (if (file-exists? script-file)
+                ;; The script file gets evaluated here.
+                (eval `(,@(with-input-from-file script-file read-all)
+                        ;; We inject the target information as a list, so it can be used by the script file
+                        `((project-path: ,,project-path)
+                          (target: ,,target)
+                          (target-path: ,,target-path))))
+                ;; Otherwise, proceed with regular target instantiation
+                (instantiate-target project-path target-path))))
+        targets
+        target-paths)
+       (println (string-append "Project " name " succesfully created"))))))
 
 (define (main arguments)
   (cond

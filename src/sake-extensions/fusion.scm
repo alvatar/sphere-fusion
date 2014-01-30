@@ -164,7 +164,6 @@
   ;; Checks
   (fusion#android-installed?)
   (fusion#android-project-supported?)
-  
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
          (all-modules (append compiled-modules modules-to-compile)))
@@ -194,11 +193,21 @@
                                                  (string-append (android-directory) "src-generator/")
                                                  arguments
                                                  arg-values)
-        ;; Process 'jni'
+        ;; Process 'jni'. Make sure Android.mk is updated if config.scm is more recent than Android.mk
         (fusion#process-directory-with-templates (android-jni-directory)
                                                  (string-append (android-directory) "jni-generator/")
                                                  arguments
-                                                 arg-values))
+                                                 arg-values
+                                                 ;; force overwriting Android.mk if config.scm is newer
+                                                 overwrite-files:
+                                                 (let ((android-mk
+                                                        (string-append (android-directory) "jni/src/Android.mk")))
+                                                   (if ((newer-than? android-mk)
+                                                        (string-append (current-directory) "config.scm"))
+                                                       (begin
+                                                         (info/color 'yellow "Android.mk updated due to changes in config.scm")
+                                                         (list android-mk))
+                                                       '()))))
       ;; Copy generated C from both compiled and imported modules into android build directory
       (for-each
        (lambda (m) (copy-file
@@ -255,7 +264,9 @@
 ;;       (err "template file doesn't have .sct extension")))
 
 ;;! Process a directory containing templates
-(define (fusion#process-directory-with-templates destination-path source-path parameters values)
+(define (fusion#process-directory-with-templates destination-path source-path parameters values #!key
+                                                 (overwrite-all #f)
+                                                 (overwrite-files '()))
   (let recur ((relative-path ""))
     (for-each
      (lambda (file)
@@ -265,11 +276,15 @@
                  (is-source-a-template? (string=? ".sct" (path-extension source-file)))
                  (destination-file ((if is-source-a-template? path-strip-extension (lambda (x) x))
                                     (string-append destination-path relative-path file))))
-            ;; Do the work if the file doesn't exist or the source file is newer than the destination file
-            (if (or (not (file-exists? destination-file))
-                    (let ((newer? (> (time->seconds (file-info-last-change-time (file-info source-file)))
-                                     (time->seconds (file-info-last-change-time (file-info destination-file))))))
-                      (if newer? (begin (info/color 'yellow "file updated from generator: " destination-file) #t) #f)))
+            ;; Do the work if:
+            (if (or (not (file-exists? destination-file)) ; the file doesn't exist
+                    overwrite-all ; the source file is newer than the destination file
+                    (if (member destination-file overwrite-files)
+                        (begin (info/color 'yellow "forced file update: " destination-file) #t)
+                        #f)
+                    (if ((newer-than? destination-file) source-file) ; the source-file has changed.
+                        (begin (info/color 'yellow "file updated from generator: " destination-file) #t)
+                        #f))
                 ;; Test whether it's a template file to process or a simple file to copy
                 (if is-source-a-template?
                     (call-with-output-file

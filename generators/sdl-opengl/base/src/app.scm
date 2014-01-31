@@ -12,7 +12,7 @@
       (begin
        (remote-repl-run!)
        (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
-      (SDL_Log "***** Unable to connect to Gambit Debug Server *****"))
+      (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
   ;; A very basic loop to test SDL
   (let ((mode* (alloc-SDL_DisplayMode)))
     (when (< (SDL_Init SDL_INIT_VIDEO) 0) (fusion:error "Couldn't initialize SDL!"))

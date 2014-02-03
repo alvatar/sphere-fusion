@@ -71,16 +71,18 @@
 ;;! Program: android
 (define android-android-path
   (make-parameter
-   (let ((path (string-append (android-sdk-path)
-                              "/tools/android")))
-     (if (file-exists? path) path #f))))
+   (and (android-sdk-path)
+        (let ((path (string-append (android-sdk-path)
+                                   "/tools/android")))
+          (if (file-exists? path) path #f)))))
 
 ;;! Program: adb
 (define android-adb-path
   (make-parameter
-   (let ((path (string-append (android-sdk-path)
-                              "/platform-tools/adb")))
-     (if (file-exists? path) path #f))))
+   (and (android-sdk-path)
+        (let ((path (string-append (android-sdk-path)
+                                   "/platform-tools/adb")))
+          (if (file-exists? path) path #f)))))
 
 ;;------------------------------------------------------------------------------
 ;; Android NDK
@@ -98,8 +100,9 @@
 ;;! Program: ndk-build
 (define android-ndk-build-path
   (make-parameter
-   (let ((path (string-append (android-ndk-path) "/ndk-build")))
-     (if (file-exists? path) path #f))))
+   (and (android-ndk-path)
+        (let ((path (string-append (android-ndk-path) "/ndk-build")))
+          (if (file-exists? path) path #f)))))
 
 ;;------------------------------------------------------------------------------
 ;;!! Android tasks

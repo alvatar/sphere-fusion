@@ -26,6 +26,9 @@
                                     " "))
                             msgs))))
 
+;;! Create a shader
+;; .parameter Type of shader
+;; .parameter Shader string
 (define (fusion:create-shader shader-type shader-code)
   (let ((shader-id (glCreateShader shader-type))
         (shader-status* (alloc-GLint* 1)))
@@ -38,27 +41,25 @@
           (let* ((info-log-length (*->GLint info-log-length*))
                  (info-log* (alloc-GLchar* info-log-length)))
             (glGetShaderInfoLog shader-id info-log-length #f info-log*)
-            (fusion:error (string-append "GL Shading Language compilation -- " (*->string info-log*)))
-            )))
+            (fusion:error (string-append "GL Shading Language compilation -- " (*->string info-log*))))))
     shader-id))
 
+;;!! Link a list of shaders
 (define* (fusion:create-program shaders (bind-callback #f))
   (let ((program-id (glCreateProgram))
         (program-status* (alloc-GLint* 1)))
-
-   (if bind-callback
-     (bind-callback program-id))
-
-   (for-each (lambda (s) (glAttachShader program-id s)) shaders)
-   (glLinkProgram program-id)
-   (glGetProgramiv program-id GL_LINK_STATUS program-status*)
-   (if (= GL_FALSE (*->GLint program-status*))
-       (let ((info-log-length* (alloc-GLint* 1)))
-         (glGetProgramiv program-id GL_INFO_LOG_LENGTH info-log-length*)
-         (let* ((info-log-length (*->GLint info-log-length*))
-                (info-log* (alloc-GLchar* info-log-length)))
-           (glGetProgramInfoLog program-id info-log-length #f info-log*)
-           (fusion:error (string-append "GL Shading Language linkage -- " (*->string info-log*)))
-           )))
-   (for-each (lambda (s) (glDetachShader program-id s)) shaders)
-   program-id))
+    ;; Run bind-callback if provided
+    (if bind-callback (bind-callback program-id))
+    ;; Link shader
+    (for-each (lambda (s) (glAttachShader program-id s)) shaders)
+    (glLinkProgram program-id)
+    (glGetProgramiv program-id GL_LINK_STATUS program-status*)
+    (if (= GL_FALSE (*->GLint program-status*))
+        (let ((info-log-length* (alloc-GLint* 1)))
+          (glGetProgramiv program-id GL_INFO_LOG_LENGTH info-log-length*)
+          (let* ((info-log-length (*->GLint info-log-length*))
+                 (info-log* (alloc-GLchar* info-log-length)))
+            (glGetProgramInfoLog program-id info-log-length #f info-log*)
+            (fusion:error (string-append "GL Shading Language linkage -- " (*->string info-log*))))))
+    (for-each (lambda (s) (glDetachShader program-id s)) shaders)
+    program-id))

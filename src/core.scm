@@ -45,6 +45,8 @@
     shader-id))
 
 ;;!! Link a list of shaders
+;; .parameter The shaders to link as a program
+;; .parameter An optional callback receiving one argument (the program id) which will be invoked before linking
 (define* (fusion:create-program shaders (bind-callback #f))
   (let ((program-id (glCreateProgram))
         (program-status* (alloc-GLint* 1)))
@@ -63,3 +65,15 @@
             (fusion:error (string-append "GL Shading Language linkage -- " (*->string info-log*))))))
     (for-each (lambda (s) (glDetachShader program-id s)) shaders)
     program-id))
+
+;;!! Loads a text file from the given path. Returns a string with the contents or #f if the file does not exists
+;; .parameter The path of the file to load
+(define (fusion:load-text-file path)
+  (and-let* ((rw (SDL_RWFromFile path "rt"))
+             (file-size (SDL_RWsize rw))
+             (buffer (alloc-char* file-size))
+             (bytes-read (SDL_RWread rw (*->void* buffer) 1 file-size))
+             (contents (*->string buffer)))
+            (SDL_RWclose rw)
+            contents))
+

@@ -13,6 +13,8 @@
    (energy: log)
    (energy: template)))
  (core
+  (include
+   (core: base-macros))
   (load
    (cond-expand
     (mobile (opengl: gl-es2))

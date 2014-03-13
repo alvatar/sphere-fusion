@@ -45,6 +45,8 @@
 (define android-link-file
   (make-parameter "linkfile_.c"))
 
+(define assets-directory
+  (make-parameter "assets/"))
 
 ;;------------------------------------------------------------------------------
 ;;!! Host programs
@@ -184,6 +186,11 @@
             (arg-values `("main"
                           "main"
                           ,(apply string-append (map (lambda (file) (string-append file " ")) all-c-files)))))
+        ;; Process 'assets'
+        (fusion#process-directory-with-templates (string-append (android-directory) "assets/")
+                                                 (assets-directory)
+                                                 arguments
+                                                 arg-values)
         ;; Process 'src'
         (fusion#process-directory-with-templates (android-src-directory)
                                                  (string-append (android-directory) "src-generator/")
@@ -234,7 +241,9 @@
             (fusion#android-generate-link-file all-modules version: version))))
     (info/color 'blue "compiling JNI C/Scheme code")
     ;; Call "ndk-build". We dump the output to a file, as Gambit has issues with the "-j" flag for concurrent compilation
-    (unless (zero? (shell-command (string-append (android-ndk-build-path) " -j -C " (android-directory) " &>ndk-log")))
+    (unless (zero? (shell-command (string-append (android-ndk-build-path) " -C " (android-directory))))
+      (err "error building native code\n\n"))
+    #;(unless (zero? (shell-command (string-append (android-ndk-build-path) " -j -C " (android-directory) " &>ndk-log")))
             (err "error building native code\n\n" (sake#read-file "ndk-log")))
     (if verbose (display (sake#read-file "ndk-log")))
     (info/color 'blue "compiling Java code")

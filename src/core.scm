@@ -1,4 +1,4 @@
-;;; Copyright (c) 2013 by Álvaro Castro Castilla
+;;; Copyright (c) 2014 by Álvaro Castro Castilla, Francisco Javier Vallarino
 ;;; Core and basic functionality for Sphere Fusion
 
 (cond-expand

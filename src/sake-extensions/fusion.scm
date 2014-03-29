@@ -16,8 +16,12 @@
 (define android-build-directory-suffix
   (make-parameter "build/"))
 
-(define android-assets-directory-suffix
+(define android-base-assets-directory-suffix
   (make-parameter "assets/"))
+
+; Android expects an assets directory. Since Fusion already uses assests as a prefix, it needs to be nested.
+(define android-assets-directory-suffix
+  (make-parameter "assets/assets/"))
 
 (define android-jni-directory
   (make-parameter
@@ -187,6 +191,8 @@
       (unless (file-exists? (android-build-directory))
               (make-directory (android-build-directory)))
       ;; Create Android assets directory if it doesn't exist
+      (unless (file-exists? (android-base-assets-directory-suffix))
+              (make-directory (android-base-assets-directory-suffix)))
       (unless (file-exists? (android-assets-directory))
               (make-directory (android-assets-directory)))
       (let ((arguments '(app-name main-module-name c-files-string))

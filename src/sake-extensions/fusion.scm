@@ -16,6 +16,13 @@
 (define android-build-directory-suffix
   (make-parameter "build/"))
 
+(define android-base-assets-directory-suffix
+  (make-parameter "assets/"))
+
+; Android expects an assets directory. Since Fusion already uses assests as a prefix, it needs to be nested.
+(define android-assets-directory-suffix
+  (make-parameter "assets/assets/"))
+
 (define android-jni-directory
   (make-parameter
    (string-append (android-directory) (android-jni-directory-suffix))))
@@ -27,6 +34,10 @@
 (define android-build-directory
   (make-parameter
    (string-append (android-directory) (android-jni-directory-suffix) (android-build-directory-suffix))))
+
+(define android-assets-directory
+  (make-parameter
+   (string-append (android-directory) (android-assets-directory-suffix))))
 
 (define android-src-directory-suffix
   (make-parameter "src/"))
@@ -44,9 +55,6 @@
 
 (define android-link-file
   (make-parameter "linkfile_.c"))
-
-(define assets-directory
-  (make-parameter "assets/"))
 
 ;;------------------------------------------------------------------------------
 ;;!! Host programs
@@ -164,8 +172,8 @@
                                     (target 'debug)
                                     (verbose #f))
   ;; Defines
-  (define-cond-expand-feature mobile)
-  (define-cond-expand-feature android)
+  (set! ##cond-expand-features (append '(mobile android) ##cond-expand-features))
+
   ;; Checks
   (fusion#android-installed?)
   (fusion#android-project-supported?)
@@ -182,13 +190,18 @@
       ;; Create Android build directory if it doesn't exist
       (unless (file-exists? (android-build-directory))
               (make-directory (android-build-directory)))
+      ;; Create Android assets directory if it doesn't exist
+      (unless (file-exists? (android-base-assets-directory-suffix))
+              (make-directory (android-base-assets-directory-suffix)))
+      (unless (file-exists? (android-assets-directory))
+              (make-directory (android-assets-directory)))
       (let ((arguments '(app-name main-module-name c-files-string))
             (arg-values `("main"
                           "main"
                           ,(apply string-append (map (lambda (file) (string-append file " ")) all-c-files)))))
         ;; Process 'assets'
-        (fusion#process-directory-with-templates (string-append (android-directory) "assets/")
-                                                 (assets-directory)
+        (fusion#process-directory-with-templates (android-assets-directory)
+                                                 "assets/"
                                                  arguments
                                                  arg-values)
         ;; Process 'src'
@@ -331,6 +344,7 @@
   (define (delete-if-exists dir)
     (when (file-exists? dir)
           (sake#delete-directory dir recursive: #t force: #t)))
+  (delete-if-exists (string-append (android-directory) "assets/"))
   (delete-if-exists (string-append (android-directory) "bin/"))
   (delete-if-exists (string-append (android-directory) "gen/"))
   (delete-if-exists (string-append (android-directory) "libs/"))

@@ -172,7 +172,7 @@
                                     (target 'debug)
                                     (verbose #f))
   ;; Defines
-  (set! ##cond-expand-features (append '(mobile android) ##cond-expand-features))
+  (##cond-expand-features (append '(mobile android) (##cond-expand-features)))
 
   ;; Checks
   (fusion#android-installed?)

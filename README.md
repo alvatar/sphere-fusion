@@ -28,9 +28,4 @@ Follow this process:
 * Recompile Gambit for the host
 * Recompile Gambit for the Android architecture, and copy the libgambc.a generated file to android/jni/gambit
 
-If you get a segmentation fault with Gambit when loading a module that is precompiled, probably it was compiled with a different Gambit version
-
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/alvatar/sphere-fusion/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
+If you get a segmentation fault with Gambit when loading a module that is precompiled, probably it was compiled with a different Gambit version.

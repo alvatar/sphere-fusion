@@ -61,7 +61,7 @@
 
 (define host-ant-path
   (make-parameter
-   (if (zero? (shell-command "ant -version >/dev/null"))
+   (if (zero? (shell-command "ant -version &>/dev/null"))
        "ant"
        #f)))
 
@@ -610,7 +610,7 @@
                 ;;(##include "~~spheres/spheres#.scm")
                 (define-cond-expand-feature host)
                 ,@(map (lambda (f) `(define-cond-expand-feature ,f)) cond-expand-features)
-                (##import ,main-module))))
+                (##spheres-load ,main-module))))
    (gambit-eval-here code)))
 
 (define (fusion#host-compile-exe exe-name main-module #!key

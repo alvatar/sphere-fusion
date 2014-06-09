@@ -20,7 +20,9 @@
   (sake#install-sphere-to-system extra-directories: '("generators")))
 
 (define-task clean ()
-  (sake#default-clean))
+  (sake#default-clean)
+  (if (file-exists? "test/tmp")
+      (sake#delete-file "test/tmp" force: #t recursive: #t)))
 
 (define-task all (compile)
   'all)

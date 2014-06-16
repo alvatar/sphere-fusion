@@ -16,7 +16,7 @@
   (include
    (core: base-macros))
   (load
+   (sdl2: sdl2)
    (cond-expand
     (mobile (opengl: gl-es2))
-    (else (opengl: gl)))
-   (sdl2: sdl2))))
+    (else (opengl: gl))))))

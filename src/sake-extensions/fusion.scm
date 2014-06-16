@@ -644,7 +644,7 @@
                      ((cond-expand (feature-id body ...) more-clauses ...)
                       (cond-expand more-clauses ...))))
                  (##spheres-load ,main-module))))
-    (gambit-eval-here code)))
+    (gambit-eval-here code flags-string: "-:dar,h10000")))
 
 (define (fusion#host-compile-exe exe-name main-module #!key
                                  (version '())

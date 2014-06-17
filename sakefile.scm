@@ -7,7 +7,7 @@
   ;; Compile Sfusion
   (sake#compile-to-exe "sfusion" '(sfusion) cond-expand-features: '(optimize)))
 
-(define-task install ()
+(define-task install-1 ()
   ;; Install Sfusion
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion")
@@ -15,9 +15,14 @@
   (copy-file (string-append (current-source-directory) "sake-extensions/fusion.scm")
              "~~spheres/sake-extensions/src/fusion.scm")
   (copy-file (string-append (current-source-directory) "sake-extensions/template.scm")
-             "~~spheres/sake-extensions/src/template.scm")
+             "~~spheres/sake-extensions/src/template.scm"))
+
+(define-task install-2 ()
   ;; Install the Sphere's modules and extra directories
   (sake#install-sphere-to-system extra-directories: '("generators")))
+
+(define-task install (install-1 install-2)
+  'install)
 
 (define-task clean ()
   (sake#default-clean)

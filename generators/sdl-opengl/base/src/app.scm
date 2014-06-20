@@ -8,7 +8,8 @@
 
 (define (main)
   ;; Install and run the remote REPL: IP address of the computer running the debug server
-  (if (remote-repl-setup! "192.168.200.145" port: 20000)
+  (SDL_Log "***** Trying to connect to Gambit Debug Server *****")
+  (if (remote-repl-setup! "localhost" port: 20000)
       (begin
        (remote-repl-run!)
        (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))

@@ -1,18 +1,18 @@
 /* File: "gambit.h" */
 
 /*
- * Copyright (c) 1994-2013 by Marc Feeley, All Rights Reserved.
+ * Copyright (c) 1994-2014 by Marc Feeley, All Rights Reserved.
  */
 
 #ifndef ___GAMBIT_H
 #define ___GAMBIT_H
 
 #ifndef ___VERSION
-#define ___VERSION 407001
+#define ___VERSION 407002
 #endif
 
-#if ___VERSION != 407001
-#include "gambit-not407001.h"
+#if ___VERSION != 407002
+#include "gambit-not407002.h"
 #else
 
 #ifdef HAVE_CONFIG_H
@@ -1387,6 +1387,84 @@
 
 /*---------------------------------------------------------------------------*/
 
+/* C math library properties. */
+
+#ifndef ___DONT_HAVE_MATH_H
+#include <math.h>
+#endif
+
+#ifdef _MSC_VER
+
+/*
+ * Older versions of the Microsoft Visual C compilers did not
+ * implement some important math functions.  So we need to define them
+ * in the Gambit runtime system.
+ */
+
+#define ___DEFINE_SCALBN
+#define ___DEFINE_ILOGB
+#define ___DEFINE_EXPM1
+#define ___DEFINE_LOG1P
+#define ___DEFINE_ASINH
+#define ___DEFINE_ACOSH
+#define ___DEFINE_ATANH
+
+#if _MSC_VER >= 1800
+
+/*
+ * Starting with version 18 (released in 2013), the following
+ * functions are supported by the C math library.
+ */
+
+#define ___HAVE_GOOD_SCALBN
+#define ___HAVE_GOOD_ILOGB
+#define ___HAVE_GOOD_EXPM1
+#define ___HAVE_GOOD_LOG1P
+#define ___HAVE_GOOD_ASINH
+#define ___HAVE_GOOD_ACOSH
+#define ___HAVE_GOOD_ATANH
+
+#endif
+
+/*
+ * The following functions seem to be implemented in old versions.
+ */
+
+#define ___HAVE_GOOD_SINH
+#define ___HAVE_GOOD_COSH
+#define ___HAVE_GOOD_TANH
+
+#else
+
+/*
+ * On other C compilers, we assume that the following math functions
+ * were implemented.
+ */
+
+#define ___HAVE_GOOD_SCALBN
+#define ___HAVE_GOOD_ILOGB
+#define ___HAVE_GOOD_EXPM1
+#define ___HAVE_GOOD_LOG1P
+#define ___HAVE_GOOD_ASINH
+#define ___HAVE_GOOD_ACOSH
+#define ___HAVE_GOOD_ATANH
+#define ___HAVE_GOOD_SINH
+#define ___HAVE_GOOD_COSH
+#define ___HAVE_GOOD_TANH
+
+#endif
+
+/*
+ * We assume that no C compiler has good implementations of atan2 and
+ * pow.  So we need to define them in the Gambit runtime system.
+ */
+
+#define ___DEFINE_ATAN2
+#define ___DEFINE_POW
+
+
+/*---------------------------------------------------------------------------*/
+
 /* Visibility directives. */
 
 #ifndef ___HIDDEN
@@ -2734,7 +2812,7 @@ ___FIX((((___BIGMDOUBLEDIGIT)___BIGMFETCH(___BODY_AS(u,___tSUBTYPED),___INT(___B
 #define ___FIXMUL(x,y)((___WORD)((x)*___INT(y)))
 #define ___FIXMULP(x,y)(___EXPECT_FALSE(___FIXQUO((___temp=___FIXMUL(x,y)),y)!=(x))?___FAL:___temp)
 #define ___FIXSQUARE(x)___FIXMUL(x,x)
-#define ___FIXSQUAREP(x)(___EXPECT_FALSE(___CAST(unsigned ___WORD,___FIXADD(x,___FIX(___SQRT_MAX_FIX)))>___FIX(2*___SQRT_MAX_FIX))?___FAL:___FIXSQUARE(x))
+#define ___FIXSQUAREP(x)(___EXPECT_FALSE(___CAST(unsigned ___WORD,___FIXADD(x,___FIX(___SQRT_MAX_FIX)))>(___CAST(unsigned ___WORD,___FIX(___SQRT_MAX_FIX))<<1))?___FAL:___FIXSQUARE(x))
 #define ___FIXNEG(x)((___WORD)(-(x)))
 #define ___FIXNEGP(x)(___EXPECT_FALSE((x)==___FIX(___MIN_FIX))?___FAL:___FIXNEG(x))
 #define ___FIXSUB(x,y)((___WORD)((x)-(y)))
@@ -2865,30 +2943,70 @@ ___FIX((((___BIGMDOUBLEDIGIT)___BIGMFETCH(___BODY_AS(u,___tSUBTYPED),___INT(___B
 #define ___F64CEILING(x)___CLIBEXT(ceil)(x)
 #define ___F64TRUNCATE(x)___EXT(___trunc)(x)
 #define ___F64ROUND(x)___EXT(___round)(x)
+#ifdef ___HAVE_GOOD_SCALBN
 #define ___F64SCALBN(x,n)___CLIBEXT(scalbn)(x,___INT(n))
+#else
+#define ___F64SCALBN(x,n)___EXT(___scalbn)(x,___INT(n))
+#endif
+#ifdef ___HAVE_GOOD_ILOGB
 #define ___F64ILOGB(x)___FIX(___CLIBEXT(ilogb)(x))
+#else
+#define ___F64ILOGB(x)___FIX(___EXT(___ilogb)(x))
+#endif
 #define ___F64EXP(x)___CLIBEXT(exp)(x)
+#ifdef ___HAVE_GOOD_EXPM1
 #define ___F64EXPM1(x)___CLIBEXT(expm1)(x)
+#else
+#define ___F64EXPM1(x)___EXT(___expm1)(x)
+#endif
 #define ___F64LOG(x)___CLIBEXT(log)(x)
+#ifdef ___HAVE_GOOD_LOG1P
 #define ___F64LOG1P(x)___CLIBEXT(log1p)(x)
+#else
+#define ___F64LOG1P(x)___EXT(___log1p)(x)
+#endif
 #define ___F64SIN(x)___CLIBEXT(sin)(x)
 #define ___F64COS(x)___CLIBEXT(cos)(x)
 #define ___F64TAN(x)___CLIBEXT(tan)(x)
 #define ___F64ASIN(x)___CLIBEXT(asin)(x)
 #define ___F64ACOS(x)___CLIBEXT(acos)(x)
 #define ___F64ATAN(x)___CLIBEXT(atan)(x)
-#ifdef ___GOOD_ATAN2
+#ifdef ___HAVE_GOOD_SINH
+#define ___F64SINH(x)___CLIBEXT(sinh)(x)
+#else
+#define ___F64SINH(x)___EXT(___sinh)(x)
+#endif
+#ifdef ___HAVE_GOOD_COSH
+#define ___F64COSH(x)___CLIBEXT(cosh)(x)
+#else
+#define ___F64COSH(x)___EXT(___cosh)(x)
+#endif
+#ifdef ___HAVE_GOOD_TANH
+#define ___F64TANH(x)___CLIBEXT(tanh)(x)
+#else
+#define ___F64TANH(x)___EXT(___tanh)(x)
+#endif
+#ifdef ___HAVE_GOOD_ASINH
+#define ___F64ASINH(x)___CLIBEXT(asinh)(x)
+#else
+#define ___F64ASINH(x)___EXT(___asinh)(x)
+#endif
+#ifdef ___HAVE_GOOD_ACOSH
+#define ___F64ACOSH(x)___CLIBEXT(acosh)(x)
+#else
+#define ___F64ACOSH(x)___EXT(___acosh)(x)
+#endif
+#ifdef ___HAVE_GOOD_ATANH
+#define ___F64ATANH(x)___CLIBEXT(atanh)(x)
+#else
+#define ___F64ATANH(x)___EXT(___atanh)(x)
+#endif
+#ifdef ___HAVE_GOOD_ATAN2
 #define ___F64ATAN2(y,x)___CLIBEXT(atan2)(y,x)
 #else
 #define ___F64ATAN2(y,x)___EXT(___atan2)(y,x)
 #endif
-#define ___F64SINH(x)___CLIBEXT(sinh)(x)
-#define ___F64COSH(x)___CLIBEXT(cosh)(x)
-#define ___F64TANH(x)___CLIBEXT(tanh)(x)
-#define ___F64ASINH(x)___CLIBEXT(asinh)(x)
-#define ___F64ACOSH(x)___CLIBEXT(acosh)(x)
-#define ___F64ATANH(x)___CLIBEXT(atanh)(x)
-#ifdef ___GOOD_POW
+#ifdef ___HAVE_GOOD_POW
 #define ___F64EXPT(x,y)___CLIBEXT(pow)(x,y)
 #else
 #define ___F64EXPT(x,y)___EXT(___pow)(x,y)
@@ -2902,8 +3020,8 @@ ___FIX((((___BIGMDOUBLEDIGIT)___BIGMFETCH(___BODY_AS(u,___tSUBTYPED),___INT(___B
 #define ___F64ZEROP(x)((x)==0.0)
 #define ___F64POSITIVEP(x)((x)>0.0)
 #define ___F64NEGATIVEP(x)((x)<0.0)
-#define ___F64ODDP(x)(___F64INTEGERP(x) && (x)!=2.0*___CLIBEXT(floor)((x)*0.5))
-#define ___F64EVENP(x)(___F64INTEGERP(x) && (x)==2.0*___CLIBEXT(floor)((x)*0.5))
+#define ___F64ODDP(x)(___F64INTEGERP(x) && (x)!=2.0*___F64FLOOR((x)*0.5))
+#define ___F64EVENP(x)(___F64INTEGERP(x) && (x)==2.0*___F64FLOOR((x)*0.5))
 #define ___F64FINITEP(x)___EXT(___isfinite)(x)
 #define ___F64INFINITEP(x)((x)!=0.0 && (x)==2.0*(x))
 #ifdef ___USE_ISNAN
@@ -6915,10 +7033,6 @@ int _fltused; /* needed if floating-point used. */
 
 #endif
 
-#ifndef ___DONT_HAVE_MATH_H
-#include <math.h>
-#endif
-
 #ifdef ___USE_SETJMP
 
 typedef struct ___jmpbuf_struct
@@ -7762,12 +7876,6 @@ typedef struct ___global_state_struct
     double (*atan)
        ___P((double x),
             ());
-#ifdef ___GOOD_ATAN2
-    double (*atan2)
-       ___P((double y,
-             double x),
-            ());
-#endif
     double (*sinh)
        ___P((double x),
             ());
@@ -7786,12 +7894,14 @@ typedef struct ___global_state_struct
     double (*atanh)
        ___P((double x),
             ());
-#ifdef ___GOOD_POW
+    double (*atan2)
+       ___P((double y,
+             double x),
+            ());
     double (*pow)
        ___P((double x,
              double y),
             ());
-#endif
     double (*sqrt)
        ___P((double x),
             ());
@@ -7851,13 +7961,64 @@ typedef struct ___global_state_struct
     double (*___round)
        ___P((double x),
             ());
-#ifndef ___GOOD_ATAN2
+#ifdef ___DEFINE_SCALBN
+    double (*___scalbn)
+       ___P((double x,
+             int n),
+            ());
+#endif
+#ifdef ___DEFINE_ILOGB
+    int (*___ilogb)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_EXPM1
+    double (*___expm1)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_LOG1P
+    double (*___log1p)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_SINH
+    double (*___sinh)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_COSH
+    double (*___cosh)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_TANH
+    double (*___tanh)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_ASINH
+    double (*___asinh)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_ACOSH
+    double (*___acosh)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_ATANH
+    double (*___atanh)
+       ___P((double x),
+            ());
+#endif
+#ifdef ___DEFINE_ATAN2
     double (*___atan2)
        ___P((double y,
              double x),
             ());
 #endif
-#ifndef ___GOOD_POW
+#ifdef ___DEFINE_POW
     double (*___pow)
        ___P((double x,
              double y),
@@ -8792,6 +8953,23 @@ typedef struct ___global_state_struct
        ___P((___SCMOBJ ht_src,
              ___SCMOBJ ht_dst),
             ());
+    void (*___cleanup) ___PVOID;
+    void (*___cleanup_and_exit_process)
+       ___P((int status),
+            ());
+    ___SCMOBJ (*___setup_vmstate)
+       ___P((___virtual_machine_state ___vms),
+            ());
+    void (*___cleanup_vmstate)
+       ___P((___virtual_machine_state ___vms),
+            ());
+    ___SCMOBJ (*___setup_pstate)
+       ___P((___processor_state ___ps,
+             ___virtual_machine_state ___vms),
+            ());
+    void (*___cleanup_pstate)
+       ___P((___processor_state ___ps),
+            ());
     ___SIZE_T (*___get_min_heap) ___PVOID;
     void (*___set_min_heap)
        ___P((___SIZE_T bytes),
@@ -8816,10 +8994,6 @@ typedef struct ___global_state_struct
              int new_settings),
             ());
     ___program_startup_info_struct *(*___get_program_startup_info) ___PVOID;
-    void (*___cleanup) ___PVOID;
-    void (*___cleanup_and_exit_process)
-       ___P((int status),
-            ());
     ___SCMOBJ (*___call)
        ___P((___PSD
              int nargs,
@@ -9957,13 +10131,64 @@ ___IMP_FUNC(double,___trunc)
 ___IMP_FUNC(double,___round)
    ___P((double x),
         ());
-#ifndef ___GOOD_ATAN2
+#ifdef ___DEFINE_SCALBN
+___IMP_FUNC(double,___scalbn)
+   ___P((double x,
+         int n),
+        ());
+#endif
+#ifdef ___DEFINE_ILOGB
+___IMP_FUNC(int,___ilogb)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_EXPM1
+___IMP_FUNC(double,___expm1)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_LOG1P
+___IMP_FUNC(double,___log1p)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_SINH
+___IMP_FUNC(double,___sinh)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_COSH
+___IMP_FUNC(double,___cosh)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_TANH
+___IMP_FUNC(double,___tanh)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_ASINH
+___IMP_FUNC(double,___asinh)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_ACOSH
+___IMP_FUNC(double,___acosh)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_ATANH
+___IMP_FUNC(double,___atanh)
+   ___P((double x),
+        ());
+#endif
+#ifdef ___DEFINE_ATAN2
 ___IMP_FUNC(double,___atan2)
    ___P((double y,
          double x),
         ());
 #endif
-#ifndef ___GOOD_POW
+#ifdef ___DEFINE_POW
 ___IMP_FUNC(double,___pow)
    ___P((double x,
          double y),
@@ -9974,6 +10199,23 @@ ___IMP_FUNC(void,___setup_params_reset)
         ());
 ___IMP_FUNC(___SCMOBJ,___setup)
    ___P((struct ___setup_params_struct *setup_params),
+        ());
+___IMP_FUNC(void,___cleanup) ___PVOID;
+___IMP_FUNC(void,___cleanup_and_exit_process)
+   ___P((int status),
+        ());
+___IMP_FUNC(___SCMOBJ,___setup_vmstate)
+   ___P((___virtual_machine_state ___vms),
+        ());
+___IMP_FUNC(void,___cleanup_vmstate)
+   ___P((___virtual_machine_state ___vms),
+        ());
+___IMP_FUNC(___SCMOBJ,___setup_pstate)
+   ___P((___processor_state ___ps,
+         ___virtual_machine_state ___vms),
+        ());
+___IMP_FUNC(void,___cleanup_pstate)
+   ___P((___processor_state ___ps),
         ());
 ___IMP_FUNC(___SIZE_T,___get_min_heap) ___PVOID;
 ___IMP_FUNC(void,___set_min_heap)
@@ -10000,10 +10242,6 @@ ___IMP_FUNC(int,___set_debug_settings)
         ());
 ___IMP_FUNC(___program_startup_info_struct*,___get_program_startup_info)
    ___PVOID;
-___IMP_FUNC(void,___cleanup) ___PVOID;
-___IMP_FUNC(void,___cleanup_and_exit_process)
-   ___P((int status),
-        ());
 ___IMP_FUNC(___SCMOBJ,___call)
    ___P((___PSD
          int nargs,

@@ -15,7 +15,7 @@
  *
  */
 
-#define ___VERSION 407001
+#define ___VERSION 407002
 
 #include <string.h>
 #include <jni.h>

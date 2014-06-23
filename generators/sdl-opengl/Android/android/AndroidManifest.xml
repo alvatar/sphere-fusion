@@ -29,8 +29,8 @@
         </activity>
     </application>
 
-    <!-- Android 2.3.3 -->
-    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="10" />
+    <!-- Android 4.0.3 -->
+    <uses-sdk android:minSdkVersion="15" android:targetSdkVersion="15" />
 
     <!-- OpenGL ES 2.0 -->
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />

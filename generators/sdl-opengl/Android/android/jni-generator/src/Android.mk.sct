@@ -15,7 +15,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := =(main-module-name)=
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/$(SDL_PATH)/include $(DEPS_PATH) $(GAMBIT_INCLUDE_PATH)
-LOCAL_CFLAGS := -fno-short-enums
+LOCAL_CFLAGS := -fno-short-enums -w
 LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.c \
 	jni_bridge.c \
   =(c-files-string)=

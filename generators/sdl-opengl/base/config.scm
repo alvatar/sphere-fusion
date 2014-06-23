@@ -1,8 +1,8 @@
 (sphere: "sdl-opengl")
 (dependencies:
  (main
-  (prelude (core: ffi-header))
-  (load (= app)))
+  (load (= app)
+        (core: ffi)))
  (app
   (include
    (core: base-macros)

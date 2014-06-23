@@ -1,7 +1,7 @@
 ;;!! Android tasks
 
 (define-task android:setup ()
-  (fusion#android-project-set-target "android-10"))
+  (fusion#android-project-set-target "android-15"))
 
 (define-task android:compile ()
   (fusion#android-compile-app "main" 'main

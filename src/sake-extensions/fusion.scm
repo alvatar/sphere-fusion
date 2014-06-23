@@ -206,12 +206,12 @@
                                                  arg-values)
         ;; Process 'src'
         (fusion#process-directory-with-templates (android-src-directory)
-                                                 (string-append (android-directory) "src-generator/")
+                                                 (string-append (android-directory) (android-src-generator-directory-suffix))
                                                  arguments
                                                  arg-values)
         ;; Process 'jni'. Make sure Android.mk is updated if config.scm is more recent than Android.mk
         (fusion#process-directory-with-templates (android-jni-directory)
-                                                 (string-append (android-directory) "jni-generator/")
+                                                 (string-append (android-directory) (android-jni-generator-directory-suffix))
                                                  arguments
                                                  arg-values
                                                  ;; force overwriting Android.mk if config.scm is newer
@@ -280,24 +280,6 @@
     (if verbose (pp code))
     (unless (= 0 (gambit-eval-here code))
             (err "error generating Gambit link file"))))
-
-;;! Generate Android.mk file from template
-;; (define (fusion#android-generate-Android.mk-file template-file app-name c-files)
-;;   (if (string=? ".sct" (path-extension template-file))
-;;       (call-with-output-file
-;;           (path-strip-extension template-file)
-;;         (lambda (f) (display
-;;                 ((build-template-from-file template-file
-;;                                            'main-module-name
-;;                                            'c-files-string
-;;                                            'c-flags-string
-;;                                            'ld-libs-string)
-;;                  app-name
-;;                  (apply string-append (map (lambda (file) (string-append file " ")) c-files))
-;;                  ""
-;;                  "")
-;;                 f)))
-;;       (err "template file doesn't have .sct extension")))
 
 ;;! Process a directory containing templates
 (define (fusion#process-directory-with-templates destination-path source-path parameters values #!key

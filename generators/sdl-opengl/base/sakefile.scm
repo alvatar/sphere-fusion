@@ -1,7 +1,12 @@
 ;;!! Android tasks
 
 (define-task android:setup ()
-  (fusion#android-project-set-target "android-15"))
+  ;; Set up Android project files
+  (fusion#android-project-set-target "android-15")
+  ;; Create symlink to SDL library from sdl2
+  (let ((SDL-link (string-append (android-jni-generator-directory) "deps/SDL")))
+    (unless (file-exists? SDL-link)
+            (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3") SDL-link))))
 
 (define-task android:compile ()
   (fusion#android-compile-app "main" 'main
@@ -13,7 +18,9 @@
   (fusion#android-install 'debug))
 
 (define-task android:run ()
+  ;; Run the Activity
   (fusion#android-run "org.libsdl.app/org.libsdl.app.SDLActivity")
+  ;; log cat
   (shell-command (string-append (android-adb-path) " logcat *:S *:F SchemeSpheres SDL SDL/APP")))
 
 (define-task android (android:compile android:install android:run)

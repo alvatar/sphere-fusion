@@ -158,7 +158,7 @@
   (shell-command
    (string-append (android-android-path) " update project --path " (android-directory) " --target " target)))
 
-;;! Calls Sake android task injecting modules and
+;;! Compile app
 ;; .parameter main-module main-module of the Android App
 ;; .parameter import-modules modules already generated to be linked as well
 (define (fusion#android-compile-app app-name

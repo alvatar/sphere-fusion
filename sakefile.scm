@@ -1,5 +1,3 @@
-(##include "src/sake-extensions/fusion.scm")
-
 (define non-compiled-modules
   '(core))
 
@@ -12,8 +10,10 @@
   (copy-file (string-append (current-build-directory) "sfusion")
              "~~bin/sfusion")
   ;; Install Sake extensions
-  (copy-file (string-append (current-source-directory) "sake-extensions/fusion.scm")
-             "~~spheres/sake-extensions/src/fusion.scm")
+  (copy-file (string-append (current-source-directory) "sake-extensions/fusion-host.scm")
+             "~~spheres/sake-extensions/src/fusion-host.scm")
+  (copy-file (string-append (current-source-directory) "sake-extensions/fusion-android.scm")
+             "~~spheres/sake-extensions/src/fusion-android.scm")
   (copy-file (string-append (current-source-directory) "sake-extensions/template.scm")
              "~~spheres/sake-extensions/src/template.scm"))
 

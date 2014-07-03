@@ -1,5 +1,5 @@
-;;; Copyright (c) 2012 by Álvaro Castro Castilla
-;;; Extensions for Sake, to use with Fusion projects
+;;; Copyright (c) 2012-2014, Álvaro Castro-Castilla
+;;; Extensions for Sake (Android)
 
 ;;------------------------------------------------------------------------------
 ;;!! Setup and initialization
@@ -19,7 +19,8 @@
 (define android-base-assets-directory-suffix
   (make-parameter "assets/"))
 
-; Android expects an assets directory. Since Fusion already uses assests as a prefix, it needs to be nested.
+;; Android expects an assets directory. Since Fusion already uses assests as a prefix, it needs to be nested.
+;; XXX: REMOVE THIS
 (define android-assets-directory-suffix
   (make-parameter "assets/assets/"))
 
@@ -135,23 +136,23 @@
 ;;! Check whether the project seems to be prepared for Android
 (define (fusion#android-project-supported?)
   (unless (file-exists? (android-directory))
-          (err "Android directory doesn't exist. Is the project setup for Android compilation?"))
+          (err "Android directory doesn't exist. Please run Android setup task."))
   (unless (or (file-exists? (android-jni-directory))
               (file-exists? (android-jni-generator-directory)))
-          (err "Android 'jni' or 'jni-generator' directory doesn't exist. Is the project setup for Android compilation?"))
+          (err "Android 'jni' or 'jni-generator' directory doesn't exist. Please run Android setup task."))
   (unless (or (file-exists? (android-src-directory))
               (file-exists? (android-src-generator-directory)))
-          (err "Android 'src' or 'src-generator' directory doesn't exist. Is the project setup for Android compilation?"))
+          (err "Android 'src' or 'src-generator' directory doesn't exist. Please run Android setup task."))
   (unless (file-exists? (string-append (android-directory) "/build.xml"))
-          (err "Android build.xml file doesn't exist. Is the project setup for Android compilation?"))
+          (err "Android build.xml file doesn't exist. Please run Android setup task."))
   (unless (file-exists? (string-append (android-directory) "/AndroidManifest.xml"))
-          (err "AndroidManifest.xml file doesn't exist. Is the project setup for Android compilation?"))
+          (err "AndroidManifest.xml file doesn't exist. Please run Android setup task."))
   (unless (file-exists? (string-append (android-directory) "/default.properties"))
-          (err "Android default.properties file doesn't exist. Is the project setup for Android compilation?"))
+          (err "Android default.properties file doesn't exist. Please run Android setup task."))
   (unless (file-exists? (string-append (android-directory) "/project.properties"))
-          (err "Android project.properties file doesn't exist. Is the project setup for Android compilation?"))
+          (err "Android project.properties file doesn't exist. Please run Android setup task."))
   (unless (file-exists? (string-append (android-directory) "/local.properties"))
-          (err "Android local.properties file doesn't exist. Run (fusion#android-project-set-target <target>) in a task.")))
+          (err "Android local.properties file doesn't exist. Please run (fusion#android-project-set-target <target>) in a setup task.")))
 
 ;;! Check update project
 (define (fusion#android-project-set-target target)
@@ -346,61 +347,3 @@
 (define (fusion#android-run activity)
   (unless (zero? (shell-command (string-append (android-adb-path) " shell am start -n " activity)))
           (err "App couldn't be run in Android device.")))
-
-;;------------------------------------------------------------------------------
-;;!! Host platform
-
-(define (fusion#host-run-interpreted main-module #!key
-                                     (version '())
-                                     (cond-expand-features '()))
-  (let* ((features (cons 'host cond-expand-features))
-         (code `((define-syntax syntax-rules-error
-                   (syntax-rules ()
-                     ((_) (0))))
-                 (define-syntax cond-expand
-                   (syntax-rules (and or not else ,@features)
-                     ((cond-expand) (syntax-rules-error "Unfulfilled cond-expand"))
-                     ((cond-expand (else body ...))
-                      (begin body ...))
-                     ((cond-expand ((and) body ...) more-clauses ...)
-                      (begin body ...))
-                     ((cond-expand ((and req1 req2 ...) body ...) more-clauses ...)
-                      (cond-expand
-                       (req1
-                        (cond-expand
-                         ((and req2 ...) body ...)
-                         more-clauses ...))
-                       more-clauses ...))
-                     ((cond-expand ((or) body ...) more-clauses ...)
-                      (cond-expand more-clauses ...))
-                     ((cond-expand ((or req1 req2 ...) body ...) more-clauses ...)
-                      (cond-expand
-                       (req1
-                        (begin body ...))
-                       (else
-                        (cond-expand
-                         ((or req2 ...) body ...)
-                         more-clauses ...))))
-                     ((cond-expand ((not req) body ...) more-clauses ...)
-                      (cond-expand
-                       (req
-                        (cond-expand more-clauses ...))
-                       (else body ...)))
-                     ,@(map
-                        (lambda (cef)
-                          `((cond-expand (,cef body ...) more-clauses ...)
-                            (begin body ...)))
-                        features)
-                     ((cond-expand (feature-id body ...) more-clauses ...)
-                      (cond-expand more-clauses ...))))
-                 (##spheres-load ,main-module))))
-    (gambit-eval-here code flags-string: "-:dar,h10000")))
-
-(define (fusion#host-compile-exe exe-name main-module #!key
-                                 (version '())
-                                 (cond-expand-features '())
-                                 (verbose #f))
-  (sake#compile-to-exe exe-name (list main-module)
-                       version: version
-                       cond-expand-features: (cons 'host cond-expand-features)
-                       verbose: verbose))

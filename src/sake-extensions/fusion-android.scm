@@ -171,6 +171,7 @@
                                     (compiled-modules '())
                                     (jni-files '())
                                     (target 'debug)
+                                    (num-threads 1)
                                     (verbose #f))
   ;; Defines
   (##cond-expand-features (append '(mobile android) (##cond-expand-features)))
@@ -178,6 +179,7 @@
   ;; Checks
   (fusion#android-installed?)
   (fusion#android-project-supported?)
+  (unless (number? num-threads) (err "fusion#android-compile-app: num-threads must be a positive number, or +inf.0"))
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
          (all-modules (append compiled-modules modules-to-compile)))
@@ -253,12 +255,19 @@
         ;; Generate link file
         (if something-generated?
             (fusion#android-generate-link-file all-modules version: version))))
-    (info/color 'blue "compiling JNI C/Scheme code")
+    (info/color 'blue (string-append "compiling JNI C/Scheme code (with " (if (= num-threads +inf.0) "MAX" num-threads) " threads)"))
     ;; Call "ndk-build". We dump the output to a file, as Gambit has issues with the "-j" flag for concurrent compilation
-    (unless (zero? (shell-command (string-append (android-ndk-build-path) " -C " (android-directory))))
-      (err "error building native code\n\n"))
-    #;(unless (zero? (shell-command (string-append (android-ndk-build-path) " -j -C " (android-directory) " &>ndk-log")))
-            (err "error building native code\n\n" (sake#read-file "ndk-log")))
+    (let ((ndk-command-str
+           (string-append (android-ndk-build-path)
+                          (cond ((< num-threads 1) (err "fusion#android-compile-app: num-threads must larger than 1 or +inf.0"))
+                                ((= num-threads 1) "")
+                                ((= num-threads +inf.0) " -j ")
+                                ((> num-threads 1) (string-append " -j " (number->string num-threads))))
+                          " -C " (android-directory) " &>ndk-log")))
+      (if verbose (println ndk-command-str))
+      (unless (zero? (shell-command ndk-command-str))
+              (err "error building native code\n\n" (sake#read-file "ndk-log"))))
+    (delete-file "ndk-log")
     (if verbose (display (sake#read-file "ndk-log")))
     (info/color 'blue "compiling Java code")
     ;; Call "ant"

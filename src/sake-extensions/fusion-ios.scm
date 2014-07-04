@@ -237,11 +237,12 @@
 (define (fusion#ios-compile-app main-module
                                 #!key
                                 arch
+                                (target 'debug)
+                                (merge-modules #f)
                                 (cond-expand-features '())
                                 (compiler-options '())
                                 (version compiler-options)
                                 (compiled-modules '())
-                                (target 'debug)
                                 (verbose #f))
   ;; Cond-expand features (relevant within the Sake environment)
   (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
@@ -250,6 +251,8 @@
   (unless arch (err "fusion#ios-compile-app: arch argument is mandatory"))
   (unless (or (eq? arch 'i386) (eq? arch 'armv7) (eq? arch 'armv7s))
           (err "fusion#ios-compile-app: wrong arch argument"))
+  (when merge-modules
+        (err "fusion#ios-compile-app: merge-modules options is not yet implemented"))
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
          (all-modules (append compiled-modules modules-to-compile))
@@ -330,6 +333,7 @@
                      " -arch " (symbol->string arch))))))
 
 ;;! Generate a loadable object from a module and its dependencies for iOS
+;; Warning! This only works on the simulator
 (define (fusion#ios-compile-loadable-set output-file
                                          main-module
                                          #!key
@@ -349,7 +353,7 @@
   (unless (or (eq? arch 'i386) (eq? arch 'armv7) (eq? arch 'armv7s))
           (err "fusion#ios-compile-loadable-set: wrong arch argument"))
   (when merge-modules
-        (err "fusion#host-compile-exe: merge-modules options is not yet implemented"))
+        (err "fusion#ios-compile-loadable-set: merge-modules options is not yet implemented"))
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
          (all-modules (append compiled-modules modules-to-compile))

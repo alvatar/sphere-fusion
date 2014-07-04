@@ -7,7 +7,7 @@
 
 (define-task install-1 ()
   ;; Install Sfusion
-  (copy-file (string-append (current-build-directory) "sfusion")
+  (copy-file (string-append (current-bin-directory) "sfusion")
              "~~bin/sfusion")
   ;; Install Sake extensions
   (copy-file (string-append (current-source-directory) "sake-extensions/template.scm")

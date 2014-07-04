@@ -1,8 +1,6 @@
 ;;; Copyright (c) 2012-2014, Álvaro Castro-Castilla
 ;;; Extensions for Sake (Host platform: Linux / OSX)
 
-;;------------------------------------------------------------------------------
-;;!! Host platform
 
 (define (fusion#host-run-interpreted main-module #!key
                                      (version '())
@@ -50,11 +48,117 @@
                  (##spheres-load ,main-module))))
     (gambit-eval-here code flags-string: "-:dar,h10000")))
 
-(define (fusion#host-compile-exe exe-name main-module #!key
+;;!! Compile an executable for the host OS
+(define (fusion#host-compile-exe exe-name
+                                 main-module
+                                 #!key
+                                 (merge-modules #f)
+                                 (compiler-options '())
+                                 override-cc-options
+                                 override-ld-options
                                  (version '())
                                  (cond-expand-features '())
                                  (verbose #f))
-  (sake#compile-to-exe exe-name (list main-module)
+  ;; Checks
+  (when merge-modules (err "fusion#host-compile-exe: merge-modules options is not yet implemented"))
+  (sake#compile-to-exe exe-name
+                       (list main-module)
+                       compiler-options: compiler-options
+                       override-cc-options: override-cc-options
+                       override-ld-options: override-ld-options
                        version: version
                        cond-expand-features: (cons 'host cond-expand-features)
                        verbose: verbose))
+
+;;! Generate a flat link file
+(define (sake#link-flat link-file
+                        c-files
+                        #!key
+                        (verbose #f))
+  (info/color 'blue (string-append "generating flat link file: " link-file))
+  (let* ((output-file link-file)
+         (code
+          `((link-flat
+             ',c-files
+             output: ,output-file
+             warnings?: ,verbose))))
+    (when verbose
+          (info/color 'green "Spawning a Gambit instance with this code: ")
+          (pp code))
+    (unless (= 0 (gambit-eval-here code))
+            (err "error generating Gambit flat link file"))
+    output-file))
+
+;;! Generate a loadable object from a module and its dependencies for the host OS
+(define (fusion#host-compile-loadable-set output-file
+                                          main-module
+                                          #!key
+                                          (merge-modules #f)
+                                          (cond-expand-features '())
+                                          (compiler-options '())
+                                          (version compiler-options)
+                                          (precompiled-modules '())
+                                          (verbose #f))
+  ;; Make sure work directories are ready
+  (unless (file-exists? (current-build-directory)) (make-directory (current-build-directory)))
+  (unless (file-exists? (current-bin-directory)) (make-directory (current-bin-directory)))
+  ;; Cond-expand features (relevant within the Sake environment)
+  (##cond-expand-features (cons 'host (##cond-expand-features))) ;; XXX TODO
+  ;; Compute dependencies
+  (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module)
+                                     (list main-module)))
+         (all-modules (append precompiled-modules modules-to-compile))
+         (link-file (string-append output-file ".c"))
+         (all-module-c-files (map (lambda (m) (string-append (current-build-directory)
+                                                        (%module-filename-c m version: version)))
+                                  all-modules))
+         (all-c-files/link (append all-module-c-files
+                                   (list (string-append (current-build-directory) link-file))))
+         (something-generated? #f))
+    ;; Generate modules (generates C code)
+    (for-each
+     (lambda (m)
+       (let ((output-c-file (string-append (current-build-directory) (%module-filename-c m version: version))))
+         (if ((newer-than? output-c-file)
+              (string-append (%module-path-src m) (%module-filename-scm m)))
+             (begin
+               (set! something-generated? #t)
+               (sake#compile-to-c m
+                                  cond-expand-features: (cons 'host cond-expand-features) ;; XXX TODO
+                                  compiler-options: compiler-options
+                                  verbose: verbose
+                                  output: output-c-file)))))
+     modules-to-compile)
+    (when something-generated?
+          (info/color 'blue "new C files generated")
+          (sake#link-flat (string-append (current-build-directory) link-file)
+                          all-module-c-files
+                          verbose: verbose))
+    ;; Compile objects
+    (set! something-generated? #f)
+    (let ((o-files
+           (map (lambda (f)
+                  (let ((output-o-file (string-append (path-strip-extension f) ".o")))
+                    (when ((newer-than? output-o-file) f)
+                          (unless something-generated?
+                                  (info/color 'blue "compiling updated C files:"))
+                          (info/color 'brown (string-append " >>>  " f))
+                          (set! something-generated? #t)
+                          (sake#compile-c-to-o f
+                                               output: output-o-file
+                                               options: '(obj)
+                                               cc-options: "-D___DYNAMIC"
+                                               verbose: verbose)
+                          output-o-file)))
+                all-c-files/link)))
+      ;; Make bundle
+      (info/color 'green "compiling C/Scheme code into a loadable object")
+      (link-files files: o-files
+                  output: (string-append (current-bin-directory) output-file)
+                  options: (case (sake#host-platform)
+                             ((linux) " -shared")
+                             ((osx) (string-append
+                                     " -bundle -arch "
+                                     (symbol->string (car (system-type)))
+                                     " -macosx_version_min 10.8")))
+                  verbose: verbose))))

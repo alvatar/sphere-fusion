@@ -15,11 +15,13 @@
   (copy-file (string-append (current-source-directory) "sake-extensions/fusion-host.scm")
              "~~spheres/sake-extensions/src/fusion-host.scm")
   (copy-file (string-append (current-source-directory) "sake-extensions/fusion-android.scm")
-             "~~spheres/sake-extensions/src/fusion-android.scm"))
+             "~~spheres/sake-extensions/src/fusion-android.scm")
+  (copy-file (string-append (current-source-directory) "sake-extensions/fusion-ios.scm")
+             "~~spheres/sake-extensions/src/fusion-ios.scm"))
 
 (define-task install-2 ()
   ;; Install the Sphere's modules and extra directories
-  (sake#install-sphere-to-system extra-directories: '("generators")))
+  (sake#install-sphere-to-system extra-directories: '("generators" "tools")))
 
 (define-task install (install-1 install-2)
   'install)

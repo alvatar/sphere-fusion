@@ -106,10 +106,11 @@
     (let ((compiler-cli (list "-sdk" sdk-name
                               (symbol->string compiler)
                               "-isysroot" ios-sdk-directory
-                              "-arch" arch-str)))
+                              "-arch" arch-str
+                              "-miphoneos-version-min=7.1")))
       (when verbose
             (info/color 'green "Compiler command:")
-            (println compiler-cli)
+            (println (string-join compiler-cli))
             (info/color 'green "Compiler args:")
             (println (string-join arguments)))
       (let ((compilation-process
@@ -135,25 +136,21 @@
     (unless (or (eq? platform-type 'simulator) (eq? platform-type 'device))
             (err "fusion#ios-run-linker: wrong platform-type"))
     ;; Construct compiler strings
-    (let ((ios-ld-cli (string-append
-                       "-sdk " sdk-name
-                       " ld"
-                       " -syslibroot " ios-sdk-directory
-                       " -arch " arch-str)))
+    (let ((ios-ld-cli (list
+                       "-sdk" sdk-name
+                       "ld"
+                       "-syslibroot" ios-sdk-directory
+                       "-arch" arch-str
+                       "-ios_simulator_version_min" "7.1.0")))
       (when verbose
             (info/color 'green "Linker command:")
-            (println ios-ld-cli)
+            (println (string-join ios-ld-cli))
             (info/color 'green "Linker args:")
             (println (string-join arguments)))
       (let ((compilation-process
              (open-process
               (list path: "xcrun"
-                    arguments: (append ((string-split #\space) ios-ld-cli)
-                                       arguments)
-                    environment:
-                    (list (string-append "ARCH=" arch-str)
-                          (string-append "LD=\"ld -arch " arch-str "\"")
-                          "LDFLAGS=\"\"")))))
+                    arguments: (append ios-ld-cli arguments)))))
         (unless (zero? (process-status compilation-process))
                 (err "fusion#ios-run-linker: error running command"))
         (close-port compilation-process)))))
@@ -271,6 +268,8 @@
                                          (merge-modules #f)
                                          (cond-expand-features '())
                                          (compiler-options '())
+                                         (cc-options '())
+                                         (ld-options '())
                                          (version compiler-options)
                                          (compiled-modules '())
                                          (verbose #f))
@@ -362,7 +361,6 @@
                         "-all_load"
                         "-dead_strip"
                         ;; We hard-code these three, specific to the iOS Simulator
-                        "-ios_simulator_version_min" "7.1.0"
                         "-objc_abi_version" "2"
                         "-no_implicit_dylibs"
                         ;; Essential libraries

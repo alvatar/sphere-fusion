@@ -419,9 +419,10 @@
          all-modules)
         ;; Generate link file
         (if something-generated?
-            (sake#link-flat link-file all-modules
-                            directory: (android-build-directory)
-                            version: version))))
+            (sake#link-incremental link-file all-modules
+                                   directory: (android-build-directory)
+                                   version: version
+                                   verbose: verbose))))
     (info/color 'blue (string-append "compiling JNI C/Scheme code (with "
                                      (if (= num-threads +inf.0) "MAX" (number->string num-threads))
                                      " threads)"))
@@ -502,7 +503,8 @@
               (info/color 'blue "new C files generated")
               (sake#link-flat link-file all-modules
                               directory: (android-build-directory)
-                              version: version))
+                              version: version
+                              verbose: verbose))
         ;; Compile objects
         (set! something-generated? #f)
         (let ((o-files

@@ -70,25 +70,6 @@
                        cond-expand-features: (cons 'host cond-expand-features)
                        verbose: verbose))
 
-;;! Generate a flat link file
-(define (sake#link-flat link-file
-                        c-files
-                        #!key
-                        (verbose #f))
-  (info/color 'blue (string-append "generating flat link file: " link-file))
-  (let* ((output-file link-file)
-         (code
-          `((link-flat
-             ',c-files
-             output: ,output-file
-             warnings?: ,verbose))))
-    (when verbose
-          (info/color 'green "Spawning a Gambit instance with this code: ")
-          (pp code))
-    (unless (= 0 (gambit-eval-here code))
-            (err "error generating Gambit flat link file"))
-    output-file))
-
 ;;! Generate a loadable object from a module and its dependencies for the host OS
 (define (fusion#host-compile-loadable-set output-file
                                           main-module

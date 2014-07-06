@@ -18,5 +18,5 @@
   (load
    (sdl2: sdl2)
    (cond-expand
-    (mobile (opengl: gl-es2))
+    (android (opengl: gl-es2))
     (else (opengl: gl))))))

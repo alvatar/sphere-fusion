@@ -32,7 +32,7 @@
           (result (read-line sdk-dir-process)))
      (unless (zero? (process-status sdk-dir-process))
              (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
-     (close-input-port sdk-dir-process)
+     (close-port sdk-dir-process)
      result)))
 
 (define ios-simulator-sdk-directory
@@ -43,7 +43,7 @@
           (result (read-line sdk-dir-process)))
      (unless (zero? (process-status sdk-dir-process))
              (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
-     (close-input-port sdk-dir-process)
+     (close-port sdk-dir-process)
      result)))
 
 
@@ -188,7 +188,8 @@
                           "LDFLAGS=\"\""
                           "IPHONEOS_DEPLOYMENT_TARGET=7.1"))))) ;; XXX TODO
         (unless (zero? (process-status compilation-process))
-                (err "fusion#ios-run-compiler: error running command"))))))
+                (err "fusion#ios-run-compiler: error running command"))
+        (close-port compilation-process)))))
 
 ;;! Runs the linker with the iOS environment
 (define (fusion#ios-run-linker #!key
@@ -203,7 +204,7 @@
                              ((simulator) (ios-simulator-sdk-directory)))))
     ;; Checks
     (unless (or (eq? platform-type 'simulator) (eq? platform-type 'device))
-            (err "fusion#compile-ios-app: wrong platform-type"))
+            (err "fusion#ios-run-linker: wrong platform-type"))
     ;; Construct compiler strings
     (let ((ios-ld-cli (string-append
                        "-sdk " sdk-name
@@ -225,7 +226,8 @@
                           (string-append "LD=\"ld -arch " arch-str "\"")
                           "LDFLAGS=\"\"")))))
         (unless (zero? (process-status compilation-process))
-                (err "fusion#ios-run-linker: error running command"))))))
+                (err "fusion#ios-run-linker: error running command"))
+        (close-port compilation-process)))))
 
 ;;! Create an archive (static library) for iOS given a set of object files
 (define (fusion#ios-create-library-archive lib-name o-files #!key (verbose #f))
@@ -245,7 +247,7 @@
                                 (compiled-modules '())
                                 (verbose #f))
   ;; Cond-expand features (relevant within the Sake environment)
-  (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
+  (##cond-expand-features (cons 'ios (##cond-expand-features)))
   ;; Checks
   (fusion#ios-project-supported?)
   (unless arch (err "fusion#ios-compile-app: arch argument is mandatory"))
@@ -280,7 +282,7 @@
                  (begin
                    (set! something-generated? #t)
                    (sake#compile-to-c m
-                                      cond-expand-features: (append cond-expand-features '(ios mobile))
+                                      cond-expand-features: (cons 'ios cond-expand-features)
                                       compiler-options: compiler-options
                                       verbose: verbose
                                       output: output-c-file)))))
@@ -346,7 +348,7 @@
                                          (compiled-modules '())
                                          (verbose #f))
   ;; Cond-expand features (relevant within the Sake environment)
-  (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
+  (##cond-expand-features (cons 'ios (##cond-expand-features)))
   ;; Checks
   (fusion#ios-project-supported?)
   (unless arch (err "fusion#ios-compile-loadable-set: arch argument is mandatory"))
@@ -381,7 +383,7 @@
                  (begin
                    (set! something-generated? #t)
                    (sake#compile-to-c m
-                                      cond-expand-features: (append cond-expand-features '(ios mobile))
+                                      cond-expand-features: (cons 'ios cond-expand-features)
                                       compiler-options: compiler-options
                                       verbose: verbose
                                       output: output-c-file)))))

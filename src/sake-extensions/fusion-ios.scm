@@ -318,7 +318,7 @@
               (info/color 'blue "new C files generated")
               (sake#link-flat link-file all-modules
                               version: version
-                              directory: (ios-build-directory)))
+                              dir: (ios-build-directory)))
         ;; Compile objects
         (set! something-generated? #f)
         (let ((o-files
@@ -364,7 +364,6 @@
                         "-objc_abi_version" "2"
                         "-no_implicit_dylibs"
                         ;; Essential libraries
-                        "-lcrt1.o"
                         "-framework" "Foundation"
                         "-framework" "UIKit"
                         "-lobjc"

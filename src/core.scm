@@ -15,8 +15,9 @@
                                     (if (string? m) m (object->string m))
                                     " "))
                             msgs)))
-  ;; FIX: this doesn't work for Android
-  (SDL_Quit))
+  (cond-expand
+   (host (SDL_Quit))
+   (else #!void)))
 
 (define (fusion:error-log . msgs)
   (SDL_LogError SDL_LOG_CATEGORY_APPLICATION
@@ -29,7 +30,7 @@
 ;;! Create a shader
 ;; .parameter Type of shader
 ;; .parameter Shader string
-(define (fusion:create-shader shader-type shader-code)
+(define (fusion:gl-create-shader shader-type shader-code)
   (let ((shader-id (glCreateShader shader-type))
         (shader-status* (alloc-GLint* 1)))
     (glShaderSource shader-id 1 (list shader-code) #f)
@@ -47,7 +48,7 @@
 ;;!! Link a list of shaders
 ;; .parameter The shaders to link as a program
 ;; .parameter An optional callback receiving one argument (the program id) which will be invoked before linking
-(define* (fusion:create-program shaders (bind-callback #f))
+(define* (fusion:gl-create-program shaders (bind-callback #f))
   (let ((program-id (glCreateProgram))
         (program-status* (alloc-GLint* 1)))
     ;; Run bind-callback if provided

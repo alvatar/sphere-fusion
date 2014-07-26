@@ -191,7 +191,7 @@
   (define (delete-if-exists dir)
     (when (file-exists? dir)
           (sake#delete-directory dir recursive: #t force: #t)))
-  (delete-if-exists (android-assets-directory))
+  ;;(delete-if-exists (android-assets-directory))
   (delete-if-exists (android-src-directory))
   (delete-if-exists (android-jni-directory))
   (delete-if-exists (string-append (android-directory) "bin/"))

@@ -68,12 +68,14 @@
 
 ;;!! Loads a text file from the given path. Returns a string with the contents or #f if the file does not exist
 ;; .parameter The path of the file to load
-(define (fusion:load-text-file path)
-  (and-let* ((rw (SDL_RWFromFile path "rt"))
-             (file-size (SDL_RWsize rw))
-             (buffer (alloc-char* (+ 1 file-size)))
-             (bytes-read (SDL_RWread rw (*->void* buffer) 1 file-size)))
-            (SDL_RWclose rw)
-            (char*-set! buffer file-size #\nul)
-            (*->string buffer)))
-
+;; (define (fusion:load-text-file path)
+;;   (and-let* ((rw (SDL_RWFromFile path "rt"))
+;;              (file-size (SDL_RWsize rw))
+;;              (buffer (alloc-char* (+ 1 file-size)))
+;;              (bytes-read (SDL_RWread rw (*->void* buffer) 1 file-size)))
+;;             (SDL_RWclose rw)
+;;             (char*-set! buffer file-size #\nul)
+;;             (*->string buffer)))
+(define (fusion:load-text-file file)
+  (with-input-from-file file
+    (lambda () (read-line (current-input-port) #!eof))))

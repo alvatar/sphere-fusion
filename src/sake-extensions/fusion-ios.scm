@@ -80,7 +80,7 @@
   (define (delete-if-exists dir)
     (when (file-exists? dir)
           (sake#delete-file dir recursive: #t force: #t)))
-  (delete-if-exists (ios-assets-directory))
+  ;;(delete-if-exists (ios-assets-directory))
   (delete-if-exists (ios-build-directory))
   (delete-if-exists (string-append (ios-source-directory) "libspheres.a"))
   (delete-if-exists (string-append (ios-directory) "build/")))

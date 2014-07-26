@@ -48,7 +48,9 @@
 ;;!! Link a list of shaders
 ;; .parameter The shaders to link as a program
 ;; .parameter An optional callback receiving one argument (the program id) which will be invoked before linking
-(define* (fusion:gl-create-program shaders (bind-callback #f))
+(define* (fusion:gl-create-program shaders
+                                   (bind-callback #f)
+                                   (delete-shaders?: #t))
   (let ((program-id (glCreateProgram))
         (program-status* (alloc-GLint* 1)))
     ;; Run bind-callback if provided
@@ -65,6 +67,7 @@
             (glGetProgramInfoLog program-id info-log-length #f info-log*)
             (fusion:error (string-append "GL Shading Language linkage -- " (*->string info-log*))))))
     (for-each (lambda (s) (glDetachShader program-id s)) shaders)
+    (if delete-shaders?(for-each glDeleteShader shaders))
     program-id))
 
 ;;!! Loads a text file from the given path. Returns a string with the contents or #f if the file does not exist

@@ -2,9 +2,6 @@
 (include "src/sake-extensions/fusion-ios.scm")
 
 
-(define non-compiled-modules
-  '(core))
-
 (define-task compile ()
   ;; Compile Sfusion
   (sake#compile-to-exe "sfusion" '(sfusion) cond-expand-features: '(optimize)))

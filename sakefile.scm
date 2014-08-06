@@ -10,6 +10,9 @@
   ;; Install Sfusion
   (copy-file (string-append (current-bin-directory) "sfusion")
              "~~bin/sfusion")
+  ;; Create symbolic link in /usr/bin
+  (delete-file "/usr/bin/sfusion")
+  (create-symbolic-link "~~/bin/sfusion" "/usr/bin/sfusion")
   ;; Install Sake extensions
   (copy-file (string-append (current-source-directory) "sake-extensions/template.scm")
              "~~spheres/sake-extensions/src/template.scm")
@@ -41,7 +44,8 @@
     (if (file-exists? android-sc)
         (sake#delete-file android-sc force: #t))))
 
-(define-task all (compile)
+(define-task all (compile install-1)
+  ;; by default, run install-1 (for sspheres command)
   'all)
 
 ;;------------------------------------------------------------------------------

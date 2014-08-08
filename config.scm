@@ -19,4 +19,7 @@
    (sdl2: sdl2)
    (cond-expand
     ((or android ios) (opengl: gl-es2))
-    (else (opengl: gl))))))
+    (else (opengl: gl)))))
+ (spheres-remote
+  (include
+   (core: base-macros))))

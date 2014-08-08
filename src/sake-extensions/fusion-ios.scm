@@ -24,6 +24,13 @@
 (define ios-assets-directory
   (make-parameter (string-append (ios-directory) (ios-assets-directory-suffix))))
 
+(define ios-spheres-directory-suffix
+  (make-parameter "spheres/"))
+
+(define ios-spheres-directory
+  (make-parameter (string-append (ios-directory) (ios-spheres-directory-suffix))))
+
+
 (define ios-device-sdk-directory
   (make-parameter
    (let* ((sdk-dir-process
@@ -259,7 +266,7 @@
                      " -arch " (symbol->string arch))))))
 
 ;;! Generate a loadable object from a module and its dependencies for iOS
-;; Warning! This only works on the simulator
+;; Warning! This only works on the simulator on iOS
 (define (fusion#ios-compile-loadable-set output-file
                                          main-module
                                          #!key
@@ -371,3 +378,41 @@
                         ,@o-files "-o"
                         ,(string-append (ios-directory) output-file))
            verbose: verbose))))))
+
+;;! Copy the local source dependencies to the iOS spheres directory, so they can be loaded
+;; at runtime
+(define (fusion#ios-copy-foreign-dependencies module)
+  ;; Spheres for the REPL
+  ;; (let ((spheres-file (string-append (ios-spheres-directory) "core/src/spheres.scm")))
+  ;;   (unless (file-exists? spheres-file)
+  ;;           (sake#copy-file (string-append (%module-path-src '(core: spheres))
+  ;;                                          (%module-filename-scm '(core: spheres)))
+  ;;                           spheres-file)))
+  ;; Syntax-case for the REPL
+  (let ((syntax-case-file (string-append (ios-spheres-directory) "core/lib/syntax-case.o1")))
+    (unless (file-exists? syntax-case-file)
+            (sake#copy-file (string-append (%sphere-path 'fusion) "ios/syntax-case.o1")
+                            syntax-case-file)))
+  ;; Copy dependencies in source form so they can be accessed from the REPL
+  (let* ((current-sphere (%current-sphere))
+         (current-sphere-remover
+          (lambda (m) (not (eq? (%module-sphere m) current-sphere))))
+         (selected-modules
+          (append
+           (filter current-sphere-remover (%module-deep-dependencies-to-include module))
+           (filter current-sphere-remover (%module-deep-dependencies-to-load module)))))
+    (for-each
+     (lambda (m)
+       (let* ((filename (%module-filename-scm m))
+              (target-source (string-append (ios-spheres-directory)
+                                            (symbol->string (%module-sphere m)) "/src/"
+                                            filename))
+              (origin-source-directory (%module-path-src m))
+              (origin-source (string-append origin-source-directory filename)))
+         (when ((newer-than? target-source) origin-source)
+               (if (file-exists? target-source)
+                   (info/color 'brown "updated file " filename)
+                   (begin (info/color 'brown "new file " filename)
+                          (sake#make-directory origin-source-directory)))
+               (sake#copy-file origin-source target-source))))
+     selected-modules)))

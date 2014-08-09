@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>13F8F568-0D61-4CB1-A43C-724F0C6695B6</string>
+	<key>IDESourceControlProjectName</key>
+	<string>SchemeSpheres</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>31AA4981-DF98-4050-9D0B-0413FDB328CB</key>
+		<string>ssh://github.com/alvatar/sphere-demo.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>ios/SchemeSpheres.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>31AA4981-DF98-4050-9D0B-0413FDB328CB</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://github.com/alvatar/sphere-demo.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>31AA4981-DF98-4050-9D0B-0413FDB328CB</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>31AA4981-DF98-4050-9D0B-0413FDB328CB</string>
+			<key>IDESourceControlWCCName</key>
+			<string>sphere-demo</string>
+		</dict>
+	</array>
+</dict>
+</plist>

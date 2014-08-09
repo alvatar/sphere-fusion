@@ -1,46 +1,40 @@
-;; Usage:
-;; Run 'sense' server
-;; compile and run with 'sake android'
-;; It will spawn an Xterm with a Gambit REPL
-;; You can test it by modifying frame-delay
+;;-------------------------------------------------------------------------------
+;; App
 
-(define frame-delay 0.4)
+(define app
+  (make-app
+   create-world:
+   (lambda (world)
+     (let ((texture1 (make-texture 'texture1 "assets/images/texture1.png"))
+           (texture2 (make-texture 'texture2 "assets/images/texture2.png"))
+           (texture3 (make-texture 'texture3 "assets/images/texture3.png")))
+       (make-world (list (make-sprite 20.0 170.0 texture1
+                                      on-mouseup: (lambda (self world event)
+                                                    (SDL_Log "MOUSE UP")
+                                                    (world-update world 'sprites
+                                                                  (cons (make-sprite 20.0 670.0 texture3)
+                                                                        (world-sprites world))))
+                                      on-mouseover: (lambda args (SDL_Log "MOUSE OVER"))
+                                      on-mouseout: (lambda args (SDL_Log "MOUSE OUT"))
+                                      on-mousemove: (lambda args (SDL_Log "MOUSE MOVE")))
+                         (make-sprite 20.0 420.0 texture2
+                                      on-mouseup: (lambda (self world event)
+                                                    (world-update world 'sprites
+                                                                  (delete self (world-sprites world)))))))))
+   pre-render: (let ((color-r (random-real))
+                     (op +))
+                 (lambda (world)
+                   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
+                   (glEnable GL_BLEND)
+                   (glDisable GL_CULL_FACE)
+                   (glCullFace GL_BACK)
+                   (apply glClearColor (list color-r 0.0 0.8 1.0))
+                   (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
+                   (cond ((>= color-r 1.0) (set! op -))
+                         ((<= color-r 0.0) (set! op +)))
+                   (set! color-r (op color-r 0.02))))
+   post-render: (lambda (world) (SDL_Delay 100))))
 
-(define (main)
-  ;; Install and run the remote REPL: IP address of the computer running the debug server
-  (SDL_Log "***** Trying to connect to Gambit Debug Server *****")
-  (if (remote-repl-setup! "localhost" port: 20000)
-      (begin
-       (remote-repl-run!)
-       (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
-      (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
-  ;; A very basic loop to test SDL
-  (let ((mode* (alloc-SDL_DisplayMode)))
-    (when (< (SDL_Init SDL_INIT_VIDEO) 0) (fusion:error "Couldn't initialize SDL!"))
-    (cond-expand
-     (mobile
-      (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
-      (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2))
-     (else #!void))
-    (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-    (SDL_GetDisplayMode 0 0 mode*)
-    (let* ((screen-width (SDL_DisplayMode-w mode*))
-           (screen-height (SDL_DisplayMode-h mode*))
-           (window (SDL_CreateWindow
-                    "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED screen-width screen-height
-                    (bitwise-ior SDL_WINDOW_OPENGL SDL_WINDOW_RESIZABLE))))
-      (unless window (fusion:error "Unable to create render window" (SDL_GetError)))
-      (let ((event (alloc-SDL_Event))
-            (ctx (SDL_GL_CreateContext window)))
-        (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
-        (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
-        (let recur ((iteration 0))
-          (SDL_PollEvent event)
-          (SDL_GL_SwapWindow window)
-          (SDL_Log (number->string iteration))
-          (glClearColor (random-real) (random-real) (random-real) 1.0)
-          (glClear (bitwise-ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT GL_STENCIL_BUFFER_BIT))
-          (SDL_GL_SwapWindow window)
-          (thread-sleep! frame-delay)
-          (unless (= SDL_QUIT (SDL_Event-type event))
-                  (recur (++ iteration))))))))
+(app)
+
+

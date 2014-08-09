@@ -182,7 +182,7 @@
                                 (compiled-modules '())
                                 (verbose #f))
   ;; Cond-expand features (relevant within the Sake environment)
-  (##cond-expand-features (cons 'ios (##cond-expand-features)))
+  (##cond-expand-features (cons 'ios (append cond-expand-features (##cond-expand-features))))
   ;; Checks
   (fusion#ios-project-supported?)
   (unless arch (err "fusion#ios-compile-app: arch argument is mandatory"))
@@ -281,7 +281,7 @@
                                          (compiled-modules '())
                                          (verbose #f))
   ;; Cond-expand features (relevant within the Sake environment)
-  (##cond-expand-features (cons 'ios (##cond-expand-features)))
+  (##cond-expand-features (cons 'ios (append cond-expand-features (##cond-expand-features))))
   ;; Checks
   (fusion#ios-project-supported?)
   (unless arch (err "fusion#ios-compile-loadable-set: arch argument is mandatory"))
@@ -381,7 +381,10 @@
 
 ;;! Copy the local source dependencies to the iOS spheres directory, so they can be loaded
 ;; at runtime
-(define (fusion#ios-copy-foreign-dependencies module)
+(define (fusion#ios-copy-foreign-dependencies module
+                                              #!key
+                                              (cond-expand-features '()))
+  (##cond-expand-features (cons 'ios (append cond-expand-features (##cond-expand-features))))
   ;; Spheres for the REPL
   ;; (let ((spheres-file (string-append (ios-spheres-directory) "core/src/spheres.scm")))
   ;;   (unless (file-exists? spheres-file)

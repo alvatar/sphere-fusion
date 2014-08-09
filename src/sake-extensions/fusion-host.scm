@@ -5,7 +5,9 @@
 (define (fusion#host-run-interpreted main-module #!key
                                      (version '())
                                      (cond-expand-features '()))
-  (let* ((features (cons 'host cond-expand-features))
+  ;; Cond-expand features (relevant within the Sake environment)
+  (##cond-expand-features (cons 'host (append cond-expand-features (##cond-expand-features))))
+  (let* ((features (##cond-expand-features))
          (code `((define-syntax syntax-rules-error
                    (syntax-rules ()
                      ((_) (0))))
@@ -59,6 +61,8 @@
                                  (version '())
                                  (cond-expand-features '())
                                  (verbose #f))
+  ;; Cond-expand features (relevant within the Sake environment)
+  (##cond-expand-features (cons 'host (append cond-expand-features (##cond-expand-features))))
   ;; Checks
   (when merge-modules (err "fusion#host-compile-exe: merge-modules options is not yet implemented"))
   (sake#compile-to-exe exe-name
@@ -80,11 +84,11 @@
                                           (version compiler-options)
                                           (precompiled-modules '())
                                           (verbose #f))
+  ;; Cond-expand features (relevant within the Sake environment)
+  (##cond-expand-features (cons 'host (append cond-expand-features (##cond-expand-features))))
   ;; Make sure work directories are ready
   (unless (file-exists? (current-build-directory)) (make-directory (current-build-directory)))
   (unless (file-exists? (current-bin-directory)) (make-directory (current-bin-directory)))
-  ;; Cond-expand features (relevant within the Sake environment)
-  (##cond-expand-features (cons 'host (##cond-expand-features))) ;; XXX TODO
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module)
                                      (list main-module)))
@@ -105,7 +109,7 @@
              (begin
                (set! something-generated? #t)
                (sake#compile-to-c m
-                                  cond-expand-features: (cons 'host cond-expand-features) ;; XXX TODO
+                                  cond-expand-features: (cons 'host cond-expand-features)
                                   compiler-options: compiler-options
                                   verbose: verbose
                                   output: output-c-file)))))
@@ -113,7 +117,7 @@
     (when something-generated?
           (info/color 'blue "new C files generated")
           (sake#link-flat (string-append (current-build-directory) link-file)
-                          all-module-c-files
+                          all-modules
                           verbose: verbose))
     ;; Compile objects
     (set! something-generated? #f)

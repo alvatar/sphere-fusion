@@ -7,9 +7,7 @@
 (define android-supported-platforms
   '(android-3
     android-4
-    android-5
     android-8
-    android-9
     android-12
     android-13
     android-14
@@ -420,7 +418,7 @@
         ;; Generate link file
         (if something-generated?
             (sake#link-incremental link-file all-modules
-                                   directory: (android-build-directory)
+                                   dir: (android-build-directory)
                                    version: version
                                    verbose: verbose))))
     (info/color 'blue (string-append "compiling JNI C/Scheme code (with "
@@ -502,7 +500,7 @@
         (when (or something-generated? (not (file-exists? (string-append (android-build-directory) link-file))))
               (info/color 'blue "new C files generated")
               (sake#link-flat link-file all-modules
-                              directory: (android-build-directory)
+                              dir: (android-build-directory)
                               version: version
                               verbose: verbose))
         ;; Compile objects

@@ -122,7 +122,7 @@
     ;; Compile objects
     (set! something-generated? #f)
     (let ((o-files
-           (map (lambda (f)
+           (map (lambda (f m)
                   (let ((output-o-file (string-append (path-strip-extension f) ".o")))
                     (when ((newer-than? output-o-file) f)
                           (unless something-generated?
@@ -132,10 +132,14 @@
                           (sake#compile-c-to-o f
                                                output: output-o-file
                                                options: '(obj)
-                                               cc-options: "-D___DYNAMIC"
+                                               cc-options: (string-append
+                                                            "-D___DYNAMIC "
+                                                            ;; Append cc options except for the link file
+                                                            (if m (%process-cc-options (%module-shallow-dependencies-cc-options m)) ""))
                                                verbose: verbose)
                           output-o-file)))
-                all-c-files/link)))
+                all-c-files/link
+                (append all-modules '(#f))))) ;; The modules + a #f for the link file
       ;; Make bundle
       (info/color 'green "compiling C/Scheme code into a loadable object")
       (link-files files: o-files

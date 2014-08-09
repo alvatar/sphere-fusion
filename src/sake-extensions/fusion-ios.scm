@@ -376,7 +376,7 @@
                         "-lobjc"
                         "-lSystem"
                         ,@o-files "-o"
-                        ,(string-append (ios-directory) output-file))
+                        ,(string-append (ios-spheres-directory) output-file))
            verbose: verbose))))))
 
 ;;! Copy the local source dependencies to the iOS spheres directory, so they can be loaded

@@ -36,7 +36,6 @@
         (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
         (let recur ((iteration 0))
           (SDL_PollEvent event)
-          (SDL_GL_SwapWindow window)
           (SDL_Log (number->string iteration))
           (glClearColor (random-real) (random-real) (random-real) 1.0)
           (glClear (bitwise-ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT GL_STENCIL_BUFFER_BIT))

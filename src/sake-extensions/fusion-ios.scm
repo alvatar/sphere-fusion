@@ -33,40 +33,44 @@
 
 (define ios-device-sdk-directory
   (make-parameter
-   (let* ((sdk-dir-process
-           (open-process (list path: (string-append (%sphere-path 'fusion) "tools/get-ios-sdk-dir")
-                               arguments: '("iPhoneOS"))))
-          (result (read-line sdk-dir-process)))
-     (unless (zero? (process-status sdk-dir-process))
-             (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
-     (close-port sdk-dir-process)
-     result)))
+   (when (eq? 'darwin (sake#host-platform))
+         (let* ((sdk-dir-process
+                 (open-process (list path: (string-append (%sphere-path 'fusion) "tools/get-ios-sdk-dir")
+                                     arguments: '("iPhoneOS"))))
+                (result (read-line sdk-dir-process)))
+           (unless (zero? (process-status sdk-dir-process))
+                   (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
+           (close-port sdk-dir-process)
+           result))))
 
 (define ios-simulator-sdk-directory
   (make-parameter
-   (let* ((sdk-dir-process
-           (open-process (list path: (string-append (%sphere-path 'fusion) "tools/get-ios-sdk-dir")
-                               arguments: '("iPhoneSimulator"))))
-          (result (read-line sdk-dir-process)))
-     (unless (zero? (process-status sdk-dir-process))
-             (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
-     (close-port sdk-dir-process)
-     result)))
+   (when (eq? 'darwin (sake#host-platform))
+         (let* ((sdk-dir-process
+                 (open-process (list path: (string-append (%sphere-path 'fusion) "tools/get-ios-sdk-dir")
+                                     arguments: '("iPhoneSimulator"))))
+                (result (read-line sdk-dir-process)))
+           (unless (zero? (process-status sdk-dir-process))
+                   (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
+           (close-port sdk-dir-process)
+           result))))
 
 ;;------------------------------------------------------------------------------
 ;;!! Toolchain
 
 (define xcodebuild-path
   (make-parameter
-   (if (zero? (shell-command "xcodebuild -usage &>/dev/null"))
-       "xcodebuild"
-       #f)))
+   (when (eq? 'darwin (sake#host-platform))
+         (if (zero? (shell-command "xcodebuild -usage &>/dev/null"))
+             "xcodebuild"
+             #f))))
 
 (define ios-sim-path
   (make-parameter
-   (if (zero? (shell-command "ios-sim --version &>/dev/null"))
-       "ios-sim"
-       #f)))
+   (when (eq? 'darwin (sake#host-platform))
+         (if (zero? (shell-command "ios-sim --version &>/dev/null"))
+             "ios-sim"
+             #f))))
 
 ;;------------------------------------------------------------------------------
 ;;!! iOS support procedures

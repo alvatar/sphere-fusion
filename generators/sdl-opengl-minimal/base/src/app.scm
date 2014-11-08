@@ -34,6 +34,12 @@
             (ctx (SDL_GL_CreateContext window)))
         (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
         (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
+        ;; This demo will work without these two steps, but as soon as the user
+        ;; tries to modify it using functions that rely on GLEW, they may get
+        ;; a segfault. See:
+        ;;     http://www.brandonfoltz.com/2013/12/example-using-opengl-3-0-with-sdl2-and-glew/
+        (SDL_GL_MakeCurrent window ctx)
+        (glewInit)
         (let recur ((iteration 0))
           (SDL_PollEvent event)
           (SDL_Log (number->string iteration))

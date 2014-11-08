@@ -41,11 +41,21 @@
         (SDL_GL_MakeCurrent window ctx)
         (glewInit)
         (let recur ((iteration 0))
-          (SDL_PollEvent event)
-          (SDL_Log (number->string iteration))
-          (glClearColor (random-real) (random-real) (random-real) 1.0)
-          (glClear (bitwise-ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT GL_STENCIL_BUFFER_BIT))
-          (SDL_GL_SwapWindow window)
-          (thread-sleep! frame-delay)
-          (unless (= SDL_QUIT (SDL_Event-type event))
-                  (recur (++ iteration))))))))
+          (let ((should-quit (let next-event ()
+                               (if (= 0 (SDL_PollEvent event))
+                                 #f
+                                 (if (= SDL_QUIT (SDL_Event-type event))
+                                   #t
+                                   (next-event))))))
+            (unless should-quit
+              (SDL_Log (number->string iteration))
+              (glClearColor (random-real) (random-real) (random-real) 1.0)
+              (glClear (bitwise-ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT GL_STENCIL_BUFFER_BIT))
+              (SDL_GL_SwapWindow window)
+              ;; We use thread-sleep! and not SDL_Delay to give the remote REPL
+              ;; a chance to run.
+              (thread-sleep! frame-delay)
+              (recur (++ iteration)))))
+        (SDL_GL_DeleteContext ctx)
+        (SDL_DestroyWindow window)
+        (SDL_Quit)))))

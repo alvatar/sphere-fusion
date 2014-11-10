@@ -39,14 +39,12 @@
         ;; a segfault. See:
         ;;     http://www.brandonfoltz.com/2013/12/example-using-opengl-3-0-with-sdl2-and-glew/
         (SDL_GL_MakeCurrent window ctx)
-        (glewInit)
+        (cond-expand (host (glewInit)) (else #!void))
         (let recur ((iteration 0))
           (let ((should-quit (let next-event ()
-                               (if (= 0 (SDL_PollEvent event))
-                                 #f
-                                 (if (= SDL_QUIT (SDL_Event-type event))
-                                   #t
-                                   (next-event))))))
+                               (cond ((= 0 (SDL_PollEvent event)) #f)
+                                     ((= SDL_QUIT (SDL_Event-type event)) #t)
+                                     (else (next-event))))))
             (unless should-quit
               (SDL_Log (number->string iteration))
               (glClearColor (random-real) (random-real) (random-real) 1.0)
